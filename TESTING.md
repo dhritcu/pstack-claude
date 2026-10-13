@@ -9,7 +9,7 @@ Two layers: automated checks that CI runs on every push to main and every PR, an
 | `node tools/check.mjs` | No Cursor-only construct (tool names, paths, model slugs, frontmatter keys, product references) in the shipped plugin; every skill and agent has valid frontmatter whose name equals its file or directory; every relative link resolves; manifests parse |
 | `claude plugin validate . --strict` and `plugins/stack` | Claude Code accepts the marketplace and the plugin |
 | `node --test tests/*.test.mjs` | The hook script, run as Claude Code runs it (`sh`, JSON on stdin), prints valid hook JSON for every event and toggle, including the real PreToolUse input shape |
-| `bun test` in `skills/auto/scripts` | 76 tests for `watch-pr`, `orch`, `check-plan`, including the no-CI regression cases |
+| `bun test` in `skills/auto/scripts` | 77 tests for `watch-pr`, `orch`, `check-plan`, including the no-CI regression cases |
 | `node --test` for `find-transcript` | 11 cases: `/clear`-first, skill-command-first, `!`-first, meta records, ranking, `--exclude`, `CLAUDE_CONFIG_DIR` |
 
 ## Real sessions
