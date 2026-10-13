@@ -1,6 +1,6 @@
 #!/bin/sh
 # pstack's stand-in for upstream's custom mode (mode: true + reminder:). One script per hook event:
-#   pstack-hook.sh session-start | prompt | subagent-start   (hook input JSON on stdin)
+#   pstack-hook.sh session-start | prompt | subagent-start | skill-loaded | agent-effort   (hook input JSON on stdin)
 # Prints Claude Code hook JSON that adds context, or nothing. Never fails the hook:
 # every path exits 0, so a broken sheet or a missing awk only loses the extra context.
 # Toggles live in the model sheet: `session hook: off`, `reminder: off`, `subagent hook: off`.
@@ -45,16 +45,18 @@ case "${1:-}" in
   prompt)
     off "session hook" && exit 0
     off "reminder" && exit 0
-    if printf '%s' "$input" | grep -Eq '"prompt"[[:space:]]*:[[:space:]]*"[[:space:]]*/stack:auto'; then
+    if printf '%s' "$input" | grep -Eq '"prompt"[[:space:]]*:[[:space:]]*"[[:space:]]*/(stack:)?auto([[:space:]]|"|\\)'; then
       printf '%s\n' "$todo" | emit UserPromptSubmit
       exit 0
     fi
+    # A typed command already picked its skill; background-task reports arrive as `<...>` prompts.
+    printf '%s' "$input" | grep -Eq '"prompt"[[:space:]]*:[[:space:]]*"[[:space:]]*[/<]' && exit 0
     printf '%s\n' '[pstack] new task? A bug report, perf problem, multi-file change, design choice, or playbook match -> your first tool call is the Skill tool with stack:auto. A casual turn, a question about this conversation, or the user opts out -> don'"'"'t.' | emit UserPromptSubmit
     ;;
   skill-loaded)
     # The todolist is the first thing auto asks for. Upstream's editor always has a todo
     # tool; Claude Code often doesn't, so restate the rule and its fallback right as the skill loads.
-    printf '%s' "$input" | grep -Eq '"skill"[[:space:]]*:[[:space:]]*"stack:auto"' || exit 0
+    printf '%s' "$input" | grep -Eq '"skill"[[:space:]]*:[[:space:]]*"(stack:)?auto"' || exit 0
     printf '%s\n' "$todo" | emit PostToolUse
     ;;
   agent-effort)

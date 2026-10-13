@@ -38,7 +38,7 @@ When the model sheet is missing and it matters, ask whether the user wants to pi
 2. Run [`/stack:setup`](../setup/SKILL.md). It asks for a reasoning budget, maps a model to each role, and writes the model sheet. The sheet applies to new sessions, or to this one after `/clear`.
 3. Start a real task with `/stack:auto`, a goal, and a check that can pass or fail.
 
-Installing turns on pstack's hooks: at session start Claude is told when to invoke `/stack:auto`, and each prompt carries a one-line reminder. Other skills load only when the user types them or `/stack:auto` runs them, except `/stack:setup`, which also loads from the user's words. The [README](../../README.md) and [guide page 1](../../docs/guide/01-setup.md) have the details. Offer to word their first prompt with them, per [`references/prompting.md`](references/prompting.md).
+Installing turns on pstack's hooks: at session start Claude is told when to invoke `/stack:auto`, and each prompt carries a one-line reminder. Other skills load only when the user types them or `/stack:auto` runs them, except `/stack:setup`, `/stack:deslop`, `/stack:control-cli` and `/stack:control-ui`, which also load from the user's words. The [README](../../README.md) and [guide page 1](../../docs/guide/01-setup.md) have the details. Offer to word their first prompt with them, per [`references/prompting.md`](references/prompting.md).
 
 If cost is the worry, say where the tokens go and how to spend fewer. pstack spends extra tokens on subagents and review panels. Rerun `/stack:setup` and pick a smaller budget or cheaper models. A role set to `inherit` runs on the session's model, which saves tokens when the session runs on a cheaper model. A shorter panel list runs fewer subagents, one for each entry. Save `/stack:auto` for work that needs rigor.
 
@@ -104,7 +104,7 @@ Close calls:
 
 Not in stack:
 
-- `/loop` is a Claude Code built-in. Claude Code has no built-in skill-authoring command; `/stack:auto write a skill for <workflow>` runs the authoring playbook.
+- `/loop` is a Claude Code built-in. Claude Code has no built-in skill-authoring command; pstack ships `/stack:create-skill`, and `/stack:auto write a skill for <workflow>` runs the authoring playbook, which uses it.
 - pstack has no `/orchestrate` skill. Orchestrate is a `/stack:auto` playbook. If the slash menu shows `/orchestrate`, another plugin provides it.
 
 ## Playbooks and principles
@@ -132,7 +132,7 @@ Principles are one-rule skills that `/stack:auto` reads and cites in its replies
 | A question got treated as the next step of the last task | Say "new task", or say the turn doesn't need the mode. |
 | A new model choice had no effect | The sheet from `/stack:setup` is injected at session start. Start a new session or run `/clear`. |
 | Runs cost more than expected | See the cost paragraph under Get set up. |
-| A skill didn't load on its own | Only `/stack:auto` (through the hooks) and `/stack:setup` load from the user's words. The others load when the user types them or when `/stack:auto` runs them, and it doesn't run every skill. |
+| A skill didn't load on its own | Only `/stack:auto` (through the hooks), `/stack:setup`, `/stack:deslop`, `/stack:control-cli` and `/stack:control-ui` load from the user's words. The others load when the user types them or when `/stack:auto` runs them, and it doesn't run every skill. |
 | Parallel agents overwrote each other | Give each agent its own worktree (`isolation: "worktree"` on the `Agent` call). |
 | An overnight run moved but finished nothing | `/loop` needs a check that can pass or fail, not a duration. See [guide page 7](../../docs/guide/07-overnight.md). |
 | The reply claims success from a green build | Ask for the real command, flow, stored value, or profile. That's the prove-it-works principle. |

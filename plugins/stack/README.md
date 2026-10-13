@@ -270,7 +270,7 @@ claude code already has a great plan mode which works great with pstack. but per
 
 type [`/stack:automate-me`](./skills/automate-me/SKILL.md). it mines your recent transcripts, drafts a `<your-name>-mode` skill from how you've actually worked, and routes through pstack underneath. you keep pstack as the base and end up with your own routing skill alongside `auto`.
 
-models are configurable too. type [`/stack:setup`](./skills/setup/SKILL.md). it asks for a reasoning budget and writes a small model sheet (`~/.claude/pstack-models.md`, or under `$CLAUDE_CONFIG_DIR`) mapping each role (code, judgment, the review panels) to a claude model. pstack's hooks put it in every session and subagent, and every skill falls back to sensible defaults when a line is absent, so you override only what you want.
+models are configurable too. type [`/stack:setup`](./skills/setup/SKILL.md). it asks for a reasoning budget and writes a small model sheet (`~/.claude/pstack-models.md`, or under `$CLAUDE_CONFIG_DIR`) mapping each role (code, judgment, the review panels) to a claude model. pstack's hooks put it in every session and every pstack subagent, and every skill falls back to sensible defaults when a line is absent, so you override only what you want.
 
 when a default changes, a sheet written before the change still pins the old default. delete those role lines, or delete the file, then run `/stack:setup` again. a rerun keeps any role whose model differs from the default.
 

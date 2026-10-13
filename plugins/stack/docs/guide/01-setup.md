@@ -11,7 +11,7 @@ In a Claude Code session, add the marketplace, then install the plugin:
 /plugin install stack@pstack-claude
 ```
 
-Claude Code confirms the plugin is installed. Run `/reload-plugins`, or start a new session, to load it. pstack's skills appear in the `/` menu as `/stack:<name>`. The bare name, such as `/stack:auto`, works too unless another command already uses it, and this guide writes skills that way.
+Claude Code confirms the plugin is installed. Run `/reload-plugins`, or start a new session, to load it. pstack's skills appear in the `/` menu as `/stack:<name>`. The bare name, such as `/auto`, works too unless another command already uses it.
 
 ## Pick your models
 
@@ -56,7 +56,7 @@ Pick something real but small, and describe it the way you'd describe it to a co
 /stack:auto add a --json flag to this command. text output stays byte-identical. verify both.
 ```
 
-Watch the task list. Its first items are the matched playbook's steps copied in, the Feature playbook for this prompt. If `/stack:auto` skips a step, the step stays in the list with `skip: <reason>`, so you can see what it chose not to do.
+Watch the task list (`.audit/<task-slug>.todo.md` when the session has no task tools). Its first items are the matched playbook's steps copied in, the Feature playbook for this prompt. If `/stack:auto` skips a step, the step stays in the list with `skip: <reason>`, so you can see what it chose not to do.
 
 From here you can type normal follow-ups. You don't need to keep `/stack:auto` on by hand. pstack's hooks are on by default: at session start they tell the agent when to route a task through `/stack:auto`, and on every prompt they add a one-line reminder to apply it to a new task that matches a playbook or needs rigor. A casual turn, or a turn where you opt out, skips it. To turn either hook off, rerun `/stack:setup`, or set `session hook: off` or `reminder: off` in the model sheet.
 

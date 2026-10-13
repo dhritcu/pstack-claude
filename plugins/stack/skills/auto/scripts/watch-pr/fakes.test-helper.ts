@@ -11,6 +11,7 @@ import type {
   ReviewThread,
   ReviewThreadPage,
   RollupPage,
+  RollupState,
 } from "./types.ts";
 import { parsePrNumber } from "./types.ts";
 
@@ -21,6 +22,7 @@ export interface FakeReaderOptions {
   readonly threads?: readonly ReviewThread[];
   readonly threadPages?: readonly ReviewThreadPage[];
   readonly commitRollups?: readonly CommitRollup[];
+  readonly baseRollup?: RollupState;
   readonly openPullRequests?: readonly OpenPullRequest[];
   readonly origin?: Repository | null;
   readonly current?: PrContext;
@@ -130,6 +132,10 @@ export function fakeReader(
     async commitRollups() {
       calls.push("commitRollups");
       return options.commitRollups ?? [{ oid: "head", state: "SUCCESS" }];
+    },
+    async baseRollup() {
+      calls.push("baseRollup");
+      return options.baseRollup ?? null;
     },
   };
 }

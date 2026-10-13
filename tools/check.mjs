@@ -18,10 +18,11 @@ const BANNED = [
   [/agent-transcripts/, "Cursor transcripts dir; Claude Code uses <config>/projects/<encoded-cwd>/*.jsonl"],
   [/`Task`|\bTask (tool|call|subagent|spawn)s?\b|\bevery `?Task`? call/, "Cursor Task tool; use the Agent tool"],
   [/generalPurpose/, "Cursor subagent type; use general-purpose or a stack:* agent"],
-  [/readonly: true/, "not an Agent tool parameter; use subagent_type stack:readonly"],
+  [/readonly: (true|false)/, "not an Agent tool parameter; use subagent_type stack:readonly"],
+  [/subagent_type: "(shell|explore)"/, "Cursor subagent type; the parent runs shell itself, Explore is capitalized"],
   [/environment: "(cloud|local)"/, "Cursor cloud agents; Claude Code subagents run locally (isolation: worktree)"],
   [/\bAskQuestion\b/, "Cursor tool; use AskUserQuestion"],
-  [/\b(grok|composer|gemini)-[0-9a-z.]+|\bgpt-[0-9][0-9a-z.-]*|claude-(opus|sonnet|haiku|fable)-[0-9-]+-(low|medium|high|xhigh|max)\b/, "Cursor model slug; use Claude aliases (fable, opus, sonnet, haiku, inherit)"],
+  [/\b(grok|composer|gemini)-[0-9a-z.]+|\bgpt-[0-9][0-9a-z.-]*|\bclaude-(opus|sonnet|haiku|fable)-[0-9]|\bclaude-[0-9]-/, "versioned model slug; use Claude aliases (fable, opus, sonnet, haiku, inherit)"],
   [/inherit-parent/, "Cursor alias; use inherit"],
   [/cursor-team-kit/, "skills are vendored in this plugin"],
   [/\/add-plugin\b/, "Cursor install command; use /plugin install"],
@@ -61,11 +62,14 @@ function frontmatter(text) {
 }
 
 const files = walk(PLUGIN);
-// Cursor-only frontmatter keys (mode, reminder, icon, is_background) mean nothing to Claude Code.
+// Cursor-only frontmatter keys (mode, reminder, icon, is_background; color on a skill) mean nothing to Claude Code.
 for (const file of files.filter((f) => f.endsWith(".md"))) {
   const fm = frontmatter(readFileSync(file, "utf8"));
-  for (const key of ["is_background", "mode", "reminder", "icon"]) if (fm && key in fm) add(file, `Cursor-only frontmatter key "${key}"`);
+  const keys = ["is_background", "mode", "reminder", "icon", ...(file.endsWith("/SKILL.md") ? ["color"] : [])];
+  for (const key of keys) if (fm && key in fm) add(file, `Cursor-only frontmatter key "${key}"`);
 }
+// Skills already appear as /stack:<name>; command trampolines duplicate every menu row.
+if (existsSync(join(PLUGIN, "commands"))) add(join(PLUGIN, "commands"), "no commands/ directory (PORTING Don't)");
 for (const file of files.filter((f) => TEXT.test(f) && !ATTRIBUTION.test(relative(PLUGIN, f)))) {
   const lines = readFileSync(file, "utf8").split("\n");
   lines.forEach((line, i) => {
@@ -109,7 +113,7 @@ for (const file of files.filter((f) => f.endsWith(".md"))) {
   }
 }
 
-// Manifests parse and agree on the version.
+// Manifests parse.
 const manifests = [".claude-plugin/marketplace.json", "plugins/stack/.claude-plugin/plugin.json", "plugins/stack/hooks/hooks.json"];
 for (const m of manifests) {
   try { JSON.parse(readFileSync(join(ROOT, m), "utf8")); } catch (e) { add(join(ROOT, m), `invalid JSON: ${e.message}`); }

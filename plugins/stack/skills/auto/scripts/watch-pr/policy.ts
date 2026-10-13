@@ -54,7 +54,8 @@ async function mergeAssessment(
 }
 // A head with no rollup is only "no CI" once nothing else explains it. Right
 // after a push the head rollup stays null until the first check registers, so
-// an earlier commit with checks means the head has not reported yet. A BLOCKED
+// an earlier commit with checks, or checks on the base branch tip, means the
+// head has not reported yet. A BLOCKED
 // PR with no reported checks and no pending review can be waiting on a required
 // check that has not started. Both stay unavailable and retry.
 async function noChecksCi(
@@ -66,6 +67,10 @@ async function noChecksCi(
   if (merge.anyCommitReported || merge.github.kind === "refused")
     throw new ChecksUnavailable(
       `no checks reported on head ${head}, but a commit on this PR has reported checks`
+    );
+  if ((await reader.baseRollup(facts.context)) !== null)
+    throw new ChecksUnavailable(
+      `no checks reported on head ${head}, but the base branch tip has reported checks`
     );
   if (facts.mergeable === "UNKNOWN")
     throw new ChecksUnavailable(

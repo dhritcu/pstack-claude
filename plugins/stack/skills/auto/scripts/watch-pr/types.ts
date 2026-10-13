@@ -423,6 +423,7 @@ export interface GitHubReader {
     after: string | null
   ): Promise<ReviewThreadPage>;
   commitRollups(context: PrContext): Promise<readonly CommitRollup[]>;
+  baseRollup(context: PrContext): Promise<RollupState>;
 }
 export interface PollingOptions {
   readonly interval: number;
