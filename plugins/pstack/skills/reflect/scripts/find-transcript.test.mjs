@@ -55,6 +55,14 @@ function find(args, env = { CLAUDE_CONFIG_DIR: config }) {
 }
 
 describe("find-transcript", () => {
+	it("prefers a session that opens with the fragment over a newer one that only quotes it", () => {
+		const target = transcript("feature-session", [user("Product wants a zebra filter on the feed. Build it.")]);
+		const quoting = transcript("reflect-session", [user("reflect on the session that started 'Product wants a zebra filter on the feed'")]);
+		assert.equal(find(["Product wants a zebra filter"]).stdout, target);
+		assert.equal(find(["started 'product wants a zebra"]).stdout, quoting, "a contains-only match is still found");
+		assert.equal(find(["--exclude", "feature-session", "Product wants a zebra filter"]).stdout, quoting, "--exclude drops a session id");
+	});
+
 	it("finds a plain opening prompt, case- and whitespace-insensitively", () => {
 		const file = transcript("plain", [user("Please  refactor the\nBilling   module"), assistant("ok"), user("and add tests")]);
 		assert.deepEqual(find(["refactor the billing module"]), { code: 0, stdout: file, stderr: "" });

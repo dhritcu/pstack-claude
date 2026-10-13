@@ -3,7 +3,9 @@
 // fragment. Searches only <config>/projects/<encoded-cwd>/, never other
 // workspaces' chats.
 //
-// Usage: node find-transcript.mjs [--cwd <dir>] "<fragment of the opening prompt>"
+// Usage: node find-transcript.mjs [--cwd <dir>] [--exclude <session-id>] "<fragment of the opening prompt>"
+// A session whose opening prompt starts with the fragment beats one that only contains it (a
+// prompt that quotes another session's opening); newest wins within each rank.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -27,19 +29,23 @@ function fail(message) {
 
 function parseArgs(argv) {
 	let cwd = process.cwd();
+	const exclude = new Set();
 	const rest = [];
 	for (let i = 0; i < argv.length; i++) {
 		if (argv[i] === "--cwd") {
 			if (i + 1 >= argv.length) fail("--cwd needs a directory");
 			cwd = argv[++i];
+		} else if (argv[i] === "--exclude") {
+			if (i + 1 >= argv.length) fail("--exclude needs a session id");
+			exclude.add(argv[++i]);
 		} else if (argv[i] === "-h" || argv[i] === "--help") {
-			process.stdout.write('usage: find-transcript.mjs [--cwd <dir>] "<prompt fragment>"\n');
+			process.stdout.write('usage: find-transcript.mjs [--cwd <dir>] [--exclude <session-id>] "<prompt fragment>"\n');
 			process.exit(0);
 		} else rest.push(argv[i]);
 	}
 	const fragment = normalize(rest.join(" "));
 	if (!fragment) fail('missing prompt fragment; usage: find-transcript.mjs [--cwd <dir>] "<fragment>"');
-	return { cwd, fragment };
+	return { cwd, exclude, fragment };
 }
 
 // Claude Code keys a project by its physical path; long encodings are cut at
@@ -115,24 +121,32 @@ async function openingPrompt(file) {
 	return command;
 }
 
-const { cwd, fragment } = parseArgs(process.argv.slice(2));
+const { cwd, exclude, fragment } = parseArgs(process.argv.slice(2));
 const { projects, dirs, expected } = projectDirs(cwd);
 if (dirs.length === 0) fail(`no transcripts for ${cwd}: ${expected.map((name) => path.join(projects, name)).join(" or ")} does not exist`);
 
 const candidates = [];
 for (const dir of dirs)
 	for (const entry of fs.readdirSync(dir, { withFileTypes: true }))
-		if (entry.isFile() && entry.name.endsWith(".jsonl") && !entry.name.startsWith("agent-")) {
+		if (entry.isFile() && entry.name.endsWith(".jsonl") && !entry.name.startsWith("agent-") && !exclude.has(entry.name.slice(0, -".jsonl".length))) {
 			const file = path.join(dir, entry.name);
 			candidates.push({ file, mtime: fs.statSync(file).mtimeMs });
 		}
 candidates.sort((a, b) => b.mtime - a.mtime);
 
+let contains = null;
 for (const { file } of candidates) {
 	const prompt = await openingPrompt(file);
-	if (prompt !== null && normalize(prompt).includes(fragment)) {
+	if (prompt === null) continue;
+	const text = normalize(prompt);
+	if (text.startsWith(fragment)) {
 		process.stdout.write(`${file}\n`);
 		process.exit(0);
 	}
+	if (contains === null && text.includes(fragment)) contains = file;
+}
+if (contains !== null) {
+	process.stdout.write(`${contains}\n`);
+	process.exit(0);
 }
 fail(`no session in ${dirs.join(", ")} opens with a prompt containing "${fragment}" (${candidates.length} transcripts checked)`);

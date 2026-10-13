@@ -14,11 +14,13 @@ Invoke when the user says "reflect" or "/pstack:reflect". Skip when the conversa
 
 Before fanning out, find this conversation's transcript in this workspace's transcripts directory, `${CLAUDE_CONFIG_DIR:-~/.claude}/projects/<encoded-cwd>/`, where `<encoded-cwd>` is the absolute working directory with every non-alphanumeric character replaced by `-`. Do not glob across `${CLAUDE_CONFIG_DIR:-~/.claude}/projects/*/`. That crosses workspace boundaries and reads private chats from unrelated projects.
 
-Run the finder bundled with this skill, resolving `scripts/` against this skill's base directory:
+Run the finder bundled with this skill:
 
 ```bash
-node <this skill's dir>/scripts/find-transcript.mjs "<fragment of the conversation's opening user prompt>"
+node ${CLAUDE_SKILL_DIR}/scripts/find-transcript.mjs "<fragment of the conversation's opening user prompt>"
 ```
+
+When the session to reflect on is not this one, add `--exclude ${CLAUDE_SESSION_ID}` so this session, whose own prompt may quote the fragment, can't match.
 
 It searches only the current working directory's transcripts (add `--cwd <dir>` when the session started in another directory) and prints the path of the transcript whose opening user prompt contains the fragment. Do not reimplement the scan by hand: a transcript opens with metadata records rather than the prompt, and files run to several megabytes. If it exits 1, write a digest of the session and pass that instead. The digest records what happened, in turn order: the user's prompts and corrections, the tool calls and their results, the files touched. It states no diagnosis, verdict, or cause. The digest replaces the transcript, so no reviewer can check your conclusions against the source; they judge the session, not your reading of it.
 
