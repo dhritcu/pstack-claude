@@ -24,8 +24,8 @@ Target: Claude Code 2.1.292 or newer (Agent tool `effort` parameter).
 | Cursor custom mode (`mode: true`, `reminder:`, option+enter) | pstack's hooks: SessionStart routing + a per-prompt reminder (see Hooks). Remove `mode`, `icon`, `color`, `reminder` frontmatter. |
 | Cursor plan mode | Claude Code plan mode (shift+tab) |
 | Cursor `/loop` | Claude Code `/loop` (fixed interval or self-paced) |
-| Cursor's built-in `create-skill` | Claude Code's skill format (https://code.claude.com/docs/en/skills) and `playbooks/authoring-a-skill.md` |
-| Cursor's built-in `/babysit` | (Claude Code has none; keep "the Babysit playbook", drop the comparison) |
+| Cursor's built-in `create-skill` | the bundled `create-skill` skill: `../create-skill/SKILL.md` |
+| Cursor's built-in `/babysit` | the bundled `babysit` skill (`/stack:babysit`); keep "the Babysit playbook" and its "do not route there" note |
 | `cursor-team-kit` `deslop`, `control-cli`, `control-ui` | vendored in this plugin: `../deslop/SKILL.md`, `../control-cli/SKILL.md`, `../control-ui/SKILL.md`; slash forms `/stack:deslop` etc. |
 | "Cursor restart" | "a Claude Code restart" |
 | cloud-agent URL (session pickup) | a session ID (`claude --resume <id>`), a transcript path, or a pushed branch |
@@ -71,8 +71,10 @@ A "different model family" (arena cross-judge, "a second opinion is the same pro
 ## Hooks (replace Cursor's custom mode)
 
 - `SessionStart` (startup, resume, clear, compact): injects the routing rule (when to invoke `stack:auto`) and the model sheet's lines, unless the sheet says `session hook: off`.
-- `UserPromptSubmit`: injects upstream's mode reminder each prompt ("New task? Playbook match or rigor needed → apply /stack:auto. Casual turn or user opts out → don't."), unless `reminder: off`.
+- `UserPromptSubmit`: injects a sharpened form of upstream's mode reminder each prompt ("new task? A bug report, perf problem, multi-file change, design choice, or playbook match -> your first tool call is the Skill tool with stack:auto. ..."), or the todolist rule when the prompt starts with `/stack:auto`, unless `reminder: off` or `session hook: off`.
 - `SubagentStart`: `stack:*` agents get the model sheet and the plugin root; `general-purpose` subagents get a short pointer to the principles index, unless `subagent hook: off`.
+- `PostToolUse` (Skill): when `stack:auto` loads, restates the todolist rule and its `.audit/` fallback. No toggle.
+- `PreToolUse` (Agent): fills `effort` from the sheet's budget on `stack:*` spawns that have none. No toggle.
 - `stack:auto-agent` preloads `auto` with `skills: [auto]`.
 
 ## Verification drivers

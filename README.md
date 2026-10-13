@@ -27,7 +27,7 @@ The engineering content is upstream's, word for word wherever the platform allow
 
 | Upstream | Here |
 |---|---|
-| Custom mode (`/poteto-mode` + option+enter, a per-turn reminder) | Plugin hooks: SessionStart routing, a per-prompt reminder, SubagentStart context, and a todolist restatement when `auto` loads. Toggle each in the model sheet. |
+| Custom mode (`/poteto-mode` + option+enter, a per-turn reminder) | Plugin hooks: SessionStart routing, a per-prompt reminder, SubagentStart context, and a todolist restatement when `auto` loads. The model sheet toggles the first three. |
 | `Task` subagents, `generalPurpose`, `readonly: true`, cloud agents | `Agent` subagents: `general-purpose`, `stack:auto-agent`, `stack:readonly` (no edit tools), `stack:comment-sicko`; writing workers get `isolation: "worktree"` |
 | Model slugs across vendors (Opus + Grok panels) | Claude aliases per role (`sonnet` code, `opus` judgment, `fable` hardest, `opus`+`fable` panels) plus `effort` from the budget |
 | `~/.cursor/rules/pstack-models.mdc` (always-applied rule) | `${CLAUDE_CONFIG_DIR:-~/.claude}/pstack-models.md`, injected by the hooks |
@@ -64,7 +64,7 @@ Delete a role line to fall back to the default. `session hook: off` turns off al
 
 ## Tracking upstream
 
-The `upstream` branch holds untouched upstream files. To take a new release: copy the new `pstack/` over `plugins/stack/` on `upstream`, update `upstream.json`, commit, merge into `main`, resolve conflicts with [docs/PORTING.md](docs/PORTING.md), and run `node tools/check.mjs` (fails on any Cursor-only construct, invalid frontmatter or broken link) plus the tests.
+The `upstream` branch holds untouched upstream files. To take a new release: copy the new `pstack/` over `plugins/pstack/` on `upstream` (it keeps upstream's names), update `upstream.json`, commit, merge into `main`, resolve conflicts with [docs/PORTING.md](docs/PORTING.md), and run `node tools/check.mjs` (fails on any Cursor-only construct, invalid frontmatter or broken link) plus the tests.
 
 ## License
 

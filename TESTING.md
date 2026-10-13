@@ -1,6 +1,6 @@
 # Testing
 
-Two layers: automated checks that CI runs on every push, and real Claude Code sessions run with this plugin, where the evidence is the session transcript (which tools ran, which agents were dispatched with which `model` and `effort`, what the hooks injected) plus the artifact the session produced. No Claude behavior is mocked.
+Two layers: automated checks that CI runs on every push to main and every PR, and real Claude Code sessions run with this plugin, where the evidence is the session transcript (which tools ran, which agents were dispatched with which `model` and `effort`, what the hooks injected) plus the artifact the session produced. No Claude behavior is mocked.
 
 ## Automated (CI)
 
