@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.15.21-claude.2
+
+Renames, so commands read as `/stack:<name>`:
+
+- Plugin `pstack` → `stack` (install `stack@pstack-claude`; uninstall `pstack@pstack-claude` first). Commands are `/stack:<name>`, agents `stack:auto-agent`, `stack:readonly`, `stack:comment-sicko`.
+- `poteto-mode` → `auto`, `poteto-agent` → `auto-agent`, `poteto-help` → `help`, `setup-pstack` → `setup`.
+- The project, repository, model sheet (`pstack-models.md`) and credits keep the pstack name.
+
 ## 0.15.21-claude.1
 
 First release. Ports pstack 0.15.21 (upstream `1dcc2ba`) to Claude Code.

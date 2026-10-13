@@ -8,9 +8,9 @@
   },
   "plugins": [
     {
-      "name": "pstack",
-      "source": "./plugins/pstack",
-      "description": "poteto's rigorous engineering workflows for Claude Code: poteto-mode router, 23 playbooks, 24 principles, review panels, and PR tooling.",
+      "name": "stack",
+      "source": "./plugins/stack",
+      "description": "Rigorous engineering workflows for Claude Code: the auto router, 23 playbooks, 24 principles, review panels, and PR tooling.",
       "category": "development"
     }
   ]

@@ -6,7 +6,7 @@ import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, dirname, relative, resolve } from "node:path";
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), "..");
-const PLUGIN = join(ROOT, "plugins/pstack");
+const PLUGIN = join(ROOT, "plugins/stack");
 const TEXT = /\.(md|json|ts|mjs|sh|yaml|yml|tsv)$/;
 // Upstream attribution and license files may name Cursor; nothing else may.
 const ATTRIBUTION = /(^|\/)(LICENSE[^/]*|NOTICE\.md)$/;
@@ -17,8 +17,8 @@ const BANNED = [
   [/pstack-models\.mdc|alwaysApply/, "Cursor rule file; the sheet is pstack-models.md"],
   [/agent-transcripts/, "Cursor transcripts dir; Claude Code uses <config>/projects/<encoded-cwd>/*.jsonl"],
   [/`Task`|\bTask (tool|call|subagent|spawn)s?\b|\bevery `?Task`? call/, "Cursor Task tool; use the Agent tool"],
-  [/generalPurpose/, "Cursor subagent type; use general-purpose or a pstack:* agent"],
-  [/readonly: true/, "not an Agent tool parameter; use subagent_type pstack:readonly"],
+  [/generalPurpose/, "Cursor subagent type; use general-purpose or a stack:* agent"],
+  [/readonly: true/, "not an Agent tool parameter; use subagent_type stack:readonly"],
   [/environment: "(cloud|local)"/, "Cursor cloud agents; Claude Code subagents run locally (isolation: worktree)"],
   [/\bAskQuestion\b/, "Cursor tool; use AskUserQuestion"],
   [/\b(grok|composer|gemini)-[0-9a-z.]+|\bgpt-[0-9][0-9a-z.-]*|claude-(opus|sonnet|haiku|fable)-[0-9-]+-(low|medium|high|xhigh|max)\b/, "Cursor model slug; use Claude aliases (fable, opus, sonnet, haiku, inherit)"],
@@ -26,6 +26,8 @@ const BANNED = [
   [/cursor-team-kit/, "skills are vendored in this plugin"],
   [/\/add-plugin\b/, "Cursor install command; use /plugin install"],
   [/\bCursor\b/, "Cursor product reference; describe the Claude Code equivalent"],
+  [/poteto-(mode|agent|help)\b|[Pp]oteto (mode|help|subagent)\b/, "renamed: auto, auto-agent, help (see DIVERGENCES)"],
+  [/(?<![\w-])pstack:|\bsetup-pstack\b/, "plugin namespace is stack: (/stack:<name>); setup-pstack is setup"],
 ];
 // Lines that legitimately mention a banned token (provenance notes). Keep this list short.
 const ALLOW = [
@@ -108,7 +110,7 @@ for (const file of files.filter((f) => f.endsWith(".md"))) {
 }
 
 // Manifests parse and agree on the version.
-const manifests = [".claude-plugin/marketplace.json", "plugins/pstack/.claude-plugin/plugin.json", "plugins/pstack/hooks/hooks.json"];
+const manifests = [".claude-plugin/marketplace.json", "plugins/stack/.claude-plugin/plugin.json", "plugins/stack/hooks/hooks.json"];
 for (const m of manifests) {
   try { JSON.parse(readFileSync(join(ROOT, m), "utf8")); } catch (e) { add(join(ROOT, m), `invalid JSON: ${e.message}`); }
 }

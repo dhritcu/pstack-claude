@@ -1,0 +1,153 @@
+---
+name: help
+description: Guides users through pstack setup, /stack:auto, and picking the skill, playbook, or principle for a task. Type /stack:help with a question.
+disable-model-invocation: true
+---
+
+# pstack help
+
+Answer the user's question about pstack, hand them a prompt they can send, and link the file the answer came from. For a help question, don't start the work. The user asked how, and a pstack run spends real tokens, so let them send the prompt.
+
+A message that asks for work, such as "use pstack to fix this bug", is not a help question. Read [`auto`](../auto/SKILL.md), do the work under it, and mention once that pstack's hooks route new tasks into it by default.
+
+This file maps questions to the skills and guide pages that hold the answers. Those files own the details. Read the file you route to before you quote it, and trust it when it disagrees with this map. The links here point into the installed plugin, which the user may not be able to open, so give the user the file's public copy: `https://github.com/dhritcu/pstack-claude/blob/main/plugins/stack/` followed by its path.
+
+## Find out what they need
+
+Infer the need from the message and the conversation. A named situation, such as "which skill reviews a PR?", goes straight to its section. If the need is still unclear, ask one multiple-choice question with these options, then answer only the section they pick. `AskUserQuestion` takes at most four options, so ask this one as a numbered list in your reply:
+
+- Get set up
+- Start a task with `/stack:auto`
+- Pick a skill for a situation
+- Fix a run that went wrong
+- Make pstack my own
+
+Check the state that changes the answer, and mention it only when it does:
+
+- No model sheet (`${CLAUDE_CONFIG_DIR:-~/.claude}/pstack-models.md`; the session-start context says when it is missing) means `/stack:setup` hasn't run for this user, so every role uses its default model.
+- No `verify-*` skill or other app harness in the project means agents have no scripted way to drive the app. Mention `/stack:create-verification-skill` when the question is about proving a change works.
+
+When the model sheet is missing and it matters, ask whether the user wants to pick a model for each role and a reasoning budget now. It matters when the user is new, the question is about setup or cost, or the answer depends on which models run. Ask at most once per chat. If the need is also unclear, ask both questions together. Offer two choices:
+
+- Now: give them `/stack:setup` to type, and answer their question too.
+- Later: answer their question, and add one line saying every role keeps its default model until they run `/stack:setup`.
+
+## Get set up
+
+1. Install with `/plugin marketplace add dhritcu/pstack-claude`, then `/plugin install stack@pstack-claude`. To enable it for everyone in a repo, add the marketplace under `extraKnownMarketplaces` and `"stack@pstack-claude": true` under `enabledPlugins` in the repo's `.claude/settings.json`.
+2. Run [`/stack:setup`](../setup/SKILL.md). It asks for a reasoning budget, maps a model to each role, and writes the model sheet. The sheet applies to new sessions, or to this one after `/clear`.
+3. Start a real task with `/stack:auto`, a goal, and a check that can pass or fail.
+
+Installing turns on pstack's hooks: at session start Claude is told when to invoke `/stack:auto`, and each prompt carries a one-line reminder. Other skills load only when the user types them or `/stack:auto` runs them, except `/stack:setup`, which also loads from the user's words. The [README](../../README.md) and [guide page 1](../../docs/guide/01-setup.md) have the details. Offer to word their first prompt with them, per [`references/prompting.md`](references/prompting.md).
+
+If cost is the worry, say where the tokens go and how to spend fewer. pstack spends extra tokens on subagents and review panels. Rerun `/stack:setup` and pick a smaller budget or cheaper models. A role set to `inherit` runs on the session's model, which saves tokens when the session runs on a cheaper model. A shorter panel list runs fewer subagents, one for each entry. Save `/stack:auto` for work that needs rigor.
+
+This is pstack's Claude Code port. Its skills use the Agent Skills format, so other tools can read them. But most workflow skills, including `/stack:auto`, `/stack:how`, `/stack:why`, and `/stack:teach`, spawn Claude Code subagents with per-role models, and pstack's hooks and `/loop` are Claude Code features, so those parts may not work there.
+
+## Start a task with `/stack:auto`
+
+`/stack:auto` matches the task to a playbook, copies the playbook's steps into the task list (`TaskCreate` when the session has it, otherwise an uncommitted `.audit/<task-slug>.todo.md` checklist), and runs the other skills as the steps need them. A step it skips stays in the list as `skip: <reason>`. A good prompt states the goal and how to tell it's done. It doesn't list skills, because a hand-written sequence tends to drop or reorder steps the playbook would keep. Read [`references/prompting.md`](references/prompting.md) before you help word one. [Guide page 2](../../docs/guide/02-auto.md) has examples.
+
+Whether `/stack:auto` stays on depends on how the user starts it:
+
+- By default pstack's hooks keep it on. At session start, resume, `/clear`, and compaction, a hook tells Claude when to invoke `/stack:auto`, and every prompt carries a one-line reminder, so it picks up new tasks and stays out of casual turns.
+- Typing `/stack:auto` forces it for that task, whatever the hooks would decide.
+- The model sheet's `session hook: off` and `reminder: off` lines turn the hooks off (`/stack:setup` asks). With them off, start each new task with `/stack:auto`.
+
+Link [Claude Code's skills docs](https://code.claude.com/docs/en/skills) when this comes up. Mid-chat, "new task" makes the mode match a fresh playbook. `/stack:auto` already uses `stack:auto-agent` for the subagents its playbook steps spawn. To get the same style from a subagent of your own, spawn it with `subagent_type: "stack:auto-agent"`.
+
+## Pick a skill
+
+The default answer is `/stack:auto`, which runs most of the others when its steps need them. Name a skill directly when the user wants more or less of something than the playbook gives. Read the skill before you recommend it, and give one example prompt.
+
+| The user wants to | Skill |
+|---|---|
+| Do any non-trivial task with rigor | [`/stack:auto`](../auto/SKILL.md) |
+| Know how code works now, or where new code should live | [`/stack:how`](../how/SKILL.md) |
+| Know why code is shaped this way, or where a number came from | [`/stack:why`](../why/SKILL.md) |
+| Understand a change or subsystem, explained plainly | [`/stack:teach`](../teach/SKILL.md) |
+| Catch up on their own recent work on a topic | [`/stack:recall`](../recall/SKILL.md) |
+| Catch up on everything in this chat since their last message, with enough context to decide each action item | [`/stack:ketchup`](../ketchup/SKILL.md) |
+| Know what a small diff could break outside itself | [`/stack:blast-radius`](../blast-radius/SKILL.md) |
+| Settle types and module shape before code that crosses a function boundary | [`/stack:architect`](../architect/SKILL.md) |
+| Get several attempts at one brief, merged into the best one | [`/stack:arena`](../arena/SKILL.md) |
+| Run parallel checks over slices, or race workers, as parallel subagents | [`/stack:swarm`](../swarm/SKILL.md) |
+| Have different models review a diff and try to break it | [`/stack:interrogate`](../interrogate/SKILL.md) |
+| Fix a bug test-first when a cheap local test exists | [`/stack:tdd`](../tdd/SKILL.md) |
+| Apply TypeScript rules to `.ts` or `.tsx` work | [`/stack:typescript-best-practices`](../typescript-best-practices/SKILL.md) |
+| Strip comments before review, using a reviewer that didn't write them | [`/stack:no-comments`](../no-comments/SKILL.md) |
+| Clean AI tells out of prose | [`/stack:unslop`](../unslop/SKILL.md) |
+| Write docs, an RFC, a README, a PR description, or a commit message to a standard | [`/stack:technical-writing`](../technical-writing/SKILL.md) |
+| Hear the last reply again in plain words | [`/stack:bro`](../bro/SKILL.md) |
+| Give agents a scripted way to drive the app and prove behavior | [`/stack:create-verification-skill`](../create-verification-skill/SKILL.md) |
+| Bring a verification skill and its feature map back in line with the app | [`/stack:maintain-verification-skill`](../maintain-verification-skill/SKILL.md) |
+| Vet a performance number before reporting or acting on it | [`/stack:benchmark-checklist`](../benchmark-checklist/SKILL.md) |
+| Run a large or cross-cutting change, or one to review after stepping away | [`/stack:figure-it-out`](../figure-it-out/SKILL.md) |
+| Keep a decision log during a run, and review it afterward | [`/stack:show-me-your-work`](../show-me-your-work/SKILL.md) |
+| Pick a model for each role and a reasoning budget | [`/stack:setup`](../setup/SKILL.md) |
+| Turn their own working habits into a personal mode skill | [`/stack:automate-me`](../automate-me/SKILL.md) |
+| Turn what a finished task taught into skill edits | [`/stack:reflect`](../reflect/SKILL.md) |
+| Stop agents from repeating the same mistakes in this repo | [`/stack:correct`](../correct/SKILL.md) |
+| Build a page whose buttons wake a Claude Code routine through its API trigger | [`/stack:make-bot-ui`](../make-bot-ui/SKILL.md) |
+| Find their way around pstack | `/stack:help` |
+
+If a skill directory next to this one is missing from the table, read its frontmatter and route by its description. The `principle-*` directories are covered under principles below.
+
+Close calls:
+
+- `/stack:how` explains what the code does. `/stack:why` explains the reasons. `/stack:teach` runs one or both and explains the result plainly.
+- `/stack:arena` gives every worker the same brief and merges the best parts. `/stack:swarm` splits work into slices or a race and returns one report.
+- `/stack:architect` implements right after it settles the design. Add "with checkpoint" to review the design before it writes code.
+- `/stack:interrogate` reviews the diff. `/stack:blast-radius` looks for breakage outside the diff and proves the one fact that makes the change safe.
+- `/stack:recall` rebuilds context across recent chats. `/stack:ketchup` covers only this chat since the user's last message. Resuming one specific chat or branch is the Session pickup playbook.
+- `/stack:figure-it-out` designs one rigorous run. The Orchestrate playbook runs a program that spans days and many PRs. The Autonomous run playbook drives one task to a finish condition.
+
+Not in stack:
+
+- `/loop` is a Claude Code built-in. Claude Code has no built-in skill-authoring command; `/stack:auto write a skill for <workflow>` runs the authoring playbook.
+- pstack has no `/orchestrate` skill. Orchestrate is a `/stack:auto` playbook. If the slash menu shows `/orchestrate`, another plugin provides it.
+
+## Playbooks and principles
+
+Playbooks are step lists inside `/stack:auto`, not skills, so they have no slash command. Inside `/stack:auto`, describing the task picks one, and these phrases name one directly:
+
+- "babysit this pr" or "check on pr 123" runs Babysit. It drives the PR to merge-ready and stops there. It doesn't merge unless the user asks to merge, land, or ship.
+- "land the stack" runs Shipping.
+- "take over this branch" runs Session pickup.
+- "pause safely" runs Pause safely.
+- "full autopilot on this queue" runs Autopilot-full. "stack them, don't ship" runs Autopilot-stack.
+- "run the eval playbook" runs Eval.
+
+Without `/stack:auto`, a phrase such as "babysit this pr" can get handled ad hoc instead of by the playbook. The Playbooks section of [`auto`](../auto/SKILL.md) lists every playbook and when it applies. [Guide page 6](../../docs/guide/06-verify-and-ship.md) covers opening, babysitting, and landing a PR.
+
+pstack has no planning skill. Claude Code's plan mode (shift+tab) works alongside it. For work that spans phases or stacked PRs, asking `/stack:auto` for a plan runs the [Multi-phase plan playbook](../auto/playbooks/multi-phase-plan.md), which writes the plan and doesn't implement it. For a design question, the Prototype playbook or `/stack:architect` settles it in code first.
+
+Principles are one-rule skills that `/stack:auto` reads and cites in its replies. The user rarely invokes one. They steer with the names instead, as in "apply prove it works. show me the real output." Typing `/stack:principle-<name>` still loads one on demand. [Guide page 8](../../docs/guide/08-principles.md) lists them.
+
+## Fix a run that went wrong
+
+| Symptom | Fix |
+|---|---|
+| The mode stopped applying after a few turns | The hooks are off (`session hook: off` or `reminder: off` in the model sheet), or the chat drifted. Turn them back on with `/stack:setup`, say "new task", or start each task with `/stack:auto`. |
+| A question got treated as the next step of the last task | Say "new task", or say the turn doesn't need the mode. |
+| A new model choice had no effect | The sheet from `/stack:setup` is injected at session start. Start a new session or run `/clear`. |
+| Runs cost more than expected | See the cost paragraph under Get set up. |
+| A skill didn't load on its own | Only `/stack:auto` (through the hooks) and `/stack:setup` load from the user's words. The others load when the user types them or when `/stack:auto` runs them, and it doesn't run every skill. |
+| Parallel agents overwrote each other | Give each agent its own worktree (`isolation: "worktree"` on the `Agent` call). |
+| An overnight run moved but finished nothing | `/loop` needs a check that can pass or fail, not a duration. See [guide page 7](../../docs/guide/07-overnight.md). |
+| The reply claims success from a green build | Ask for the real command, flow, stored value, or profile. That's the prove-it-works principle. |
+
+For a run that drifts, [`references/prompting.md`](references/prompting.md) has one-line steers. [Guide page 10](../../docs/guide/10-recipes-and-pitfalls.md) has more pitfalls and the recipes worth copying.
+
+## Make pstack my own
+
+- [`/stack:automate-me`](../automate-me/SKILL.md) drafts a personal mode skill from the user's own history, to use alongside `/stack:auto`.
+- [`/stack:reflect`](../reflect/SKILL.md) after a session turns its lessons into skill edits the user approves.
+- `/stack:auto write a skill for <workflow>` runs the authoring playbook. The eval playbook tests a skill change blind.
+- Fix a misbehaving skill in its own PR, not inside the feature work where it went wrong.
+
+[Guide page 9](../../docs/guide/09-make-it-yours.md) covers each of these.
+
+## Reply
+
+Lead with the answer. Give at most one example prompt in a code block, adapted from [`references/recipes.md`](references/recipes.md) when one fits, then the link to that file. Keep it short unless the user asked for the whole map.

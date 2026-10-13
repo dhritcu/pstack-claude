@@ -1,25 +1,25 @@
 # pstack for Claude Code
 
-A Claude Code port of [pstack](https://github.com/cursor/plugins/tree/main/pstack), poteto's engineering workflows: the `poteto-mode` router with 23 playbooks, 24 principles, multi-model review panels, PR tooling, and the benny automation pack. Every upstream skill, playbook, agent, script and doc is here and works on Claude Code. Two upstream dependencies that were editor built-ins (`create-skill`, `/babysit`) ship as skills, and three that lived in another plugin (`deslop`, `control-cli`, `control-ui`) are bundled.
+A Claude Code port of [pstack](https://github.com/cursor/plugins/tree/main/pstack), the engineering workflows of Lauren Tan ([poteto](https://x.com/poteto)): the `auto` router (upstream's `poteto-mode`) with 23 playbooks, 24 principles, multi-model review panels, PR tooling, and the benny automation pack. Every upstream skill, playbook, agent, script and doc is here and works on Claude Code. Two upstream dependencies that were editor built-ins (`create-skill`, `/babysit`) ship as skills, and three that lived in another plugin (`deslop`, `control-cli`, `control-ui`) are bundled.
 
-Based on upstream **pstack 0.15.21** ([`upstream.json`](upstream.json)). The plugin's own readme, in the author's voice, is [`plugins/pstack/README.md`](plugins/pstack/README.md).
+Based on upstream **pstack 0.15.21** ([`upstream.json`](upstream.json)). The plugin's own readme, in the author's voice, is [`plugins/stack/README.md`](plugins/stack/README.md).
 
 ## Install
 
 Claude Code 2.1.292 or newer (subagent `effort` support).
 
 ```
-/plugin install pstack --marketplace dhritcu/pstack-claude
+/plugin install stack --marketplace dhritcu/pstack-claude
 ```
 
 On older Claude Code, add the marketplace first:
 
 ```
 /plugin marketplace add dhritcu/pstack-claude
-/plugin install pstack@pstack-claude
+/plugin install stack@pstack-claude
 ```
 
-Then run `/pstack:setup-pstack` to pick a reasoning budget and models, and use `/pstack:poteto-mode` (or just describe the task: pstack's hooks route rigorous work into it). The scripts (`watch-pr`, `check-plan`) need [Bun](https://bun.sh).
+Then run `/stack:setup` to pick a reasoning budget and models, and use `/stack:auto` (or just describe the task: pstack's hooks route rigorous work into it). The scripts (`watch-pr`, `check-plan`) need [Bun](https://bun.sh).
 
 ## What changed from upstream
 
@@ -27,8 +27,8 @@ The engineering content is upstream's, word for word wherever the platform allow
 
 | Upstream | Here |
 |---|---|
-| Custom mode (`/poteto-mode` + option+enter, a per-turn reminder) | Plugin hooks: SessionStart routing, a per-prompt reminder, SubagentStart context, and a todolist restatement when poteto-mode loads. Toggle each in the model sheet. |
-| `Task` subagents, `generalPurpose`, `readonly: true`, cloud agents | `Agent` subagents: `general-purpose`, `pstack:poteto-agent`, `pstack:readonly` (no edit tools), `pstack:comment-sicko`; writing workers get `isolation: "worktree"` |
+| Custom mode (`/poteto-mode` + option+enter, a per-turn reminder) | Plugin hooks: SessionStart routing, a per-prompt reminder, SubagentStart context, and a todolist restatement when `auto` loads. Toggle each in the model sheet. |
+| `Task` subagents, `generalPurpose`, `readonly: true`, cloud agents | `Agent` subagents: `general-purpose`, `stack:auto-agent`, `stack:readonly` (no edit tools), `stack:comment-sicko`; writing workers get `isolation: "worktree"` |
 | Model slugs across vendors (Opus + Grok panels) | Claude aliases per role (`sonnet` code, `opus` judgment, `fable` hardest, `opus`+`fable` panels) plus `effort` from the budget |
 | `~/.cursor/rules/pstack-models.mdc` (always-applied rule) | `${CLAUDE_CONFIG_DIR:-~/.claude}/pstack-models.md`, injected by the hooks |
 | `agent-transcripts/` | `~/.claude/projects/<encoded-cwd>/*.jsonl`, found by `skills/reflect/scripts/find-transcript.mjs` |
@@ -38,7 +38,7 @@ The engineering content is upstream's, word for word wherever the platform allow
 
 ## The model sheet
 
-`/pstack:setup-pstack` writes `~/.claude/pstack-models.md` (under `$CLAUDE_CONFIG_DIR` if set):
+`/stack:setup` writes `~/.claude/pstack-models.md` (under `$CLAUDE_CONFIG_DIR` if set):
 
 ```
 # pstack model configuration
@@ -60,11 +60,11 @@ Delete a role line to fall back to the default. `session hook: off` turns off al
 
 ## Tested in real sessions
 
-[TESTING.md](TESTING.md) records real `claude` sessions run with this plugin (bug fix, feature, `/pstack:how` on a production Rust repo, review panels, babysit on a live PR, and more) and what each transcript showed, plus the automated checks CI runs.
+[TESTING.md](TESTING.md) records real `claude` sessions run with this plugin (bug fix, feature, `/stack:how` on a production Rust repo, review panels, babysit on a live PR, and more) and what each transcript showed, plus the automated checks CI runs.
 
 ## Tracking upstream
 
-The `upstream` branch holds untouched upstream files. To take a new release: copy the new `pstack/` over `plugins/pstack/` on `upstream`, update `upstream.json`, commit, merge into `main`, resolve conflicts with [docs/PORTING.md](docs/PORTING.md), and run `node tools/check.mjs` (fails on any Cursor-only construct, invalid frontmatter or broken link) plus the tests.
+The `upstream` branch holds untouched upstream files. To take a new release: copy the new `pstack/` over `plugins/stack/` on `upstream`, update `upstream.json`, commit, merge into `main`, resolve conflicts with [docs/PORTING.md](docs/PORTING.md), and run `node tools/check.mjs` (fails on any Cursor-only construct, invalid frontmatter or broken link) plus the tests.
 
 ## License
 

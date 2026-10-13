@@ -20,11 +20,11 @@ jobs:
         run: |
           npm install -g @anthropic-ai/claude-code
           claude plugin validate . --strict
-          claude plugin validate plugins/pstack --strict
+          claude plugin validate plugins/stack --strict
       - name: hook script
         run: node --test tests/*.test.mjs
-      - name: poteto-mode scripts
-        working-directory: plugins/pstack/skills/poteto-mode/scripts
+      - name: auto scripts
+        working-directory: plugins/stack/skills/auto/scripts
         run: bun install --frozen-lockfile && bun test
       - name: reflect transcript finder
-        run: node --test plugins/pstack/skills/reflect/scripts/*.test.mjs
+        run: node --test plugins/stack/skills/reflect/scripts/*.test.mjs

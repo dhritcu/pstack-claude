@@ -10,10 +10,10 @@ Target: Claude Code 2.1.292 or newer (Agent tool `effort` parameter).
 |---|---|
 | `Task` tool, "Task call", "Task subagent" | the `Agent` tool, "`Agent` call", "subagent" |
 | `subagent_type: generalPurpose` | `subagent_type: "general-purpose"` |
-| `subagent_type: generalPurpose` + `readonly: true` | `subagent_type: "pstack:readonly"` (plugin agent; no Edit/Write/NotebookEdit; MCP kept) |
+| `subagent_type: generalPurpose` + `readonly: true` | `subagent_type: "stack:readonly"` (plugin agent; no Edit/Write/NotebookEdit; MCP kept) |
 | `subagent_type: "shell"` | the parent runs the command itself with Bash |
 | `subagent_type: "explore"` | `subagent_type: "Explore"` |
-| `subagent_type: "poteto-agent"` / `"comment-sicko"` | `subagent_type: "pstack:poteto-agent"` / `"pstack:comment-sicko"` |
+| `subagent_type: "poteto-agent"` / `"comment-sicko"` | `subagent_type: "stack:auto-agent"` / `"stack:comment-sicko"` |
 | "agent mode (`readonly: false`)" | (drop; subagents have tools by default) |
 | `environment: "cloud"` | local subagents. Workers that write files get `isolation: "worktree"`; read-only workers need none. |
 | `run_in_background: true` on Task | `run_in_background: true` on the Agent call (the parent is notified when each finishes) |
@@ -26,15 +26,15 @@ Target: Claude Code 2.1.292 or newer (Agent tool `effort` parameter).
 | Cursor `/loop` | Claude Code `/loop` (fixed interval or self-paced) |
 | Cursor's built-in `create-skill` | Claude Code's skill format (https://code.claude.com/docs/en/skills) and `playbooks/authoring-a-skill.md` |
 | Cursor's built-in `/babysit` | (Claude Code has none; keep "the Babysit playbook", drop the comparison) |
-| `cursor-team-kit` `deslop`, `control-cli`, `control-ui` | vendored in this plugin: `../deslop/SKILL.md`, `../control-cli/SKILL.md`, `../control-ui/SKILL.md`; slash forms `/pstack:deslop` etc. |
+| `cursor-team-kit` `deslop`, `control-cli`, `control-ui` | vendored in this plugin: `../deslop/SKILL.md`, `../control-cli/SKILL.md`, `../control-ui/SKILL.md`; slash forms `/stack:deslop` etc. |
 | "Cursor restart" | "a Claude Code restart" |
 | cloud-agent URL (session pickup) | a session ID (`claude --resume <id>`), a transcript path, or a pushed branch |
 | Cursor dashboard / Cursor chat / Cursor Slack | say what the Claude Code user actually has (terminal session, `/schedule` routines, GitHub Action) |
 | "Cursor's Bugbot" / "Bugbot" | keep "Bugbot" (it reviews GitHub PRs whatever the editor) but say "Bugbot or another review bot" where the rule is generic |
 
-Skill names (frontmatter `name`) are lowercase-hyphen and equal the directory name: `Poteto Mode` → `poteto-mode`, `Make Bot UI` → `make-bot-ui`.
+Skill names (frontmatter `name`) are lowercase-hyphen and equal the directory name: `Poteto Mode` → `auto` (renamed from `poteto-mode`, see DIVERGENCES), `Make Bot UI` → `make-bot-ui`.
 
-`disable-model-invocation: true` stays as upstream has it on every skill except `poteto-mode` (the hooks route into it with the Skill tool). Skills reach each other by file path, as upstream does: `../<name>/SKILL.md` relative to the calling skill's directory. A user types `/pstack:<name>`.
+`disable-model-invocation: true` stays as upstream has it on every skill except `auto` (the hooks route into it with the Skill tool). Skills reach each other by file path, as upstream does: `../<name>/SKILL.md` relative to the calling skill's directory. A user types `/stack:<name>`.
 
 ## Paths
 
@@ -45,7 +45,7 @@ Skill names (frontmatter `name`) are lowercase-hyphen and equal the directory na
 | `~/.cursor/skills/<x>/` | `~/.claude/skills/<x>/` (user) |
 | `.cursor/skills/<x>/` | `.claude/skills/<x>/` (project) |
 | `~/.cursor/plugins/` | `~/.claude/plugins/` |
-| `.cursor/settings.json` (enable pstack for a repo) | `.claude/settings.json` with `extraKnownMarketplaces` + `enabledPlugins` (`"pstack@pstack-claude": true`) |
+| `.cursor/settings.json` (enable pstack for a repo) | `.claude/settings.json` with `extraKnownMarketplaces` + `enabledPlugins` (`"stack@pstack-claude": true`) |
 | `.cursor/worktrees/...` | any path; Claude Code's own worktrees live under `.claude/worktrees/` |
 | a skill's own scripts (`scripts/watch-pr/watch-pr`) | keep upstream's skill-relative wording; the reader resolves it against the skill's base directory, which Claude Code prints when a skill loads. In a hook or a one-line command, use `${CLAUDE_PLUGIN_ROOT}/skills/<skill>/scripts/...`. |
 
@@ -70,14 +70,14 @@ A "different model family" (arena cross-judge, "a second opinion is the same pro
 
 ## Hooks (replace Cursor's custom mode)
 
-- `SessionStart` (startup, resume, clear, compact): injects the routing rule (when to invoke `pstack:poteto-mode`) and the model sheet's lines, unless the sheet says `session hook: off`.
-- `UserPromptSubmit`: injects upstream's mode reminder each prompt ("New task? Playbook match or rigor needed → apply /pstack:poteto-mode. Casual turn or user opts out → don't."), unless `reminder: off`.
-- `SubagentStart`: `pstack:*` agents get the model sheet and the plugin root; `general-purpose` subagents get a short pointer to the principles index, unless `subagent hook: off`.
-- `pstack:poteto-agent` preloads `poteto-mode` with `skills: [poteto-mode]`.
+- `SessionStart` (startup, resume, clear, compact): injects the routing rule (when to invoke `stack:auto`) and the model sheet's lines, unless the sheet says `session hook: off`.
+- `UserPromptSubmit`: injects upstream's mode reminder each prompt ("New task? Playbook match or rigor needed → apply /stack:auto. Casual turn or user opts out → don't."), unless `reminder: off`.
+- `SubagentStart`: `stack:*` agents get the model sheet and the plugin root; `general-purpose` subagents get a short pointer to the principles index, unless `subagent hook: off`.
+- `stack:auto-agent` preloads `auto` with `skills: [auto]`.
 
 ## Verification drivers
 
-Claude Code's bundled `/verify` runs only when the user types it; the model cannot invoke it. Driver lines name, in order: the project's `verify-<app>` skill from `/pstack:create-verification-skill` (`.claude/skills/verify-<app>/`), then `control-ui` (browser, Electron, web) or `control-cli` (CLIs, TUIs), both vendored here. Never tell the model to invoke `/verify`.
+Claude Code's bundled `/verify` runs only when the user types it; the model cannot invoke it. Driver lines name, in order: the project's `verify-<app>` skill from `/stack:create-verification-skill` (`.claude/skills/verify-<app>/`), then `control-ui` (browser, Electron, web) or `control-cli` (CLIs, TUIs), both vendored here. Never tell the model to invoke `/verify`.
 
 ## Worktrees for delegates
 
@@ -86,6 +86,6 @@ Claude Code's bundled `/verify` runs only when the user types it; the model cann
 ## Don't
 
 - Don't add Codex, Copilot, Pi or Windows-PowerShell surfaces. This port targets Claude Code.
-- Don't add a `commands/` directory: skills already appear as `/pstack:<name>`; trampolines duplicate every menu row.
+- Don't add a `commands/` directory: skills already appear as `/stack:<name>`; trampolines duplicate every menu row.
 - Don't rewrite engineering rules, principles or stop conditions to taste. Upstream's mechanical checks stay mechanical.
 - Don't invent Claude Code features. If unsure a feature exists, say what you need and ask the parent.
