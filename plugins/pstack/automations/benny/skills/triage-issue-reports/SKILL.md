@@ -1,14 +1,36 @@
 ---
 name: triage-issue-reports
-description: Triage Slack issue reports with one thread-only verdict, evidence review, cause-aware routing, tracker dedupe, and fail-closed ticket creation. Use only from the configured Benny triage automation.
+description: Triage issue reports from GitHub Issues, Slack, or Linear with one thread-only verdict, evidence review, cause-aware routing, tracker dedupe, and fail-closed ticket creation. Use only from the configured Benny triage automation.
 disable-model-invocation: true
 ---
 
 # Triage issue reports
 
-Classify one Slack report and post one useful verdict in its source thread. Create a tracker issue only for a clear, new bug. Do not reproduce or fix it here.
+Classify one report and post one useful verdict in its source thread. Create a tracker issue only for a clear, new bug. Do not reproduce or fix it here.
 
 Load the external Benny configuration supplied by the automation. If the config is missing, malformed, or incomplete, stop without posting or writing to the tracker.
+
+## Intake adapter
+
+This file speaks Slack's vocabulary. When `intake.type` is not `slack`, read every Slack term through this table and use the configured `intake.*_action` values:
+
+| Term in this file | `slack` | `github-issues` | `linear` |
+|---|---|---|---|
+| source channel, `SOURCE_CHANNEL_ID` | channel ID | `owner/repo` | team key |
+| root thread, `SOURCE_THREAD_TS`, `trigger.thread_ts` / `trigger.ts` | root message `ts` | issue number | issue identifier |
+| source permalink | message permalink | issue URL | issue URL |
+| reply under the root thread | thread reply with `thread_ts` | comment on that issue | comment on that issue |
+| root message in the source channel | top-level channel post | a new issue, or a comment on any other issue or pull request | a new issue, or a comment on any other issue |
+| parent missing or deleted | message deleted | issue deleted, transferred, or locked | issue deleted or archived |
+| Slack write | `SendSlackMessage`, `PostToSlack`, `chat.postMessage`, any Slack connector write | `gh issue comment`, `gh issue create`, `gh issue edit`, `gh api` writes to issues or comments, any GitHub MCP write | any Linear connector write |
+| Slack credentials | Slack token or connector | the run's GitHub token | the Linear connector |
+| triage identity | Slack user ID | `claude[bot]` for the GitHub Action's default auth, or the routine owner's login | the connector account |
+
+When `intake.type` and `tracker.type` are both GitHub Issues in the same repository, the source issue is the ticket. "Create a tracker issue" means applying the configured labels and status to the source issue, and compensation removes them. Never open a second issue for the same report.
+
+In a Claude Code routine, the `gh issue` and `gh pr` subcommands are rejected by the GitHub proxy. Use the session's built-in GitHub tools or `gh api` REST calls there.
+
+A sweep run (a schedule trigger) has no single report. List reports from `intake.source_id` within `runner.sweep_window_hours` that carry `intake.source_label` and have no Benny marker reply yet, then run this whole file once per report, sequentially, each with its own frozen coordinates. One report's failure never touches another's thread.
 
 ## Hard safety rules
 
@@ -21,7 +43,7 @@ Load the external Benny configuration supplied by the automation. If the config 
 - The coordinator is the only Slack poster.
 - Delegated workers return findings only. They must be read-only and receive no Slack credentials or write actions.
 - Every child prompt must forbid `SendSlackMessage`, `PostToSlack`, `chat.postMessage`, and every other Slack write.
-- If worker isolation cannot enforce those limits, do the work in the coordinator.
+- If worker isolation cannot enforce those limits, do the work in the coordinator. On Claude Code a subagent inherits the session's MCP connectors and, through Bash, the run's tokens. Only the `benny-reader` agent (`tools: Read, Grep, Glob`) that setup installs in `.claude/agents/` provably has no write path, so delegate only to it, with `subagent_type: "benny-reader"`.
 - Never create an issue that cannot link back to the source thread.
 - Prefer no ticket over a guessed or duplicate ticket.
 - Apply pstack's `principle-separate-before-serializing-shared-state` to source coordinates.
@@ -61,7 +83,7 @@ Inspect every relevant attachment.
 - Read screenshots at full useful resolution.
 - Review video for the state transition that separates correct and broken behavior.
 - Read logs, traces, and crash text for concrete signatures.
-- If media needs specialist review, use a read-only media worker and ask a narrow question. The worker returns findings only.
+- If media needs specialist review, use a read-only media worker and ask a narrow question. The worker returns findings only. Download the file and, for video, extract frames with `ffmpeg` in the coordinator, then hand the worker the local paths.
 - If an attachment cannot be read, say so in the verdict. Do not invent what it shows.
 
 Use evidence already in the thread before asking the reporter for more.
@@ -225,7 +247,7 @@ Use only the configured marker strings. The repro automation trusts the marker o
 
 After posting, read the same source thread and verify the verdict appears under `SOURCE_THREAD_TS`. If it does not, never retry at the root.
 
-If this run created a tracker issue and the verdict did not land, use the adapter's compensation action. Verify that the issue is canceled, closed, or deleted. If compensation cannot be verified, report the failure only in the automation run output.
+If this run created a tracker issue and the verdict did not land, use the adapter's compensation action. Verify that the issue is canceled, closed, or deleted. If compensation cannot be verified, report the failure only in the automation run output (the workflow run log, or the routine's run session).
 
 ## 10. Watch one follow-up window
 

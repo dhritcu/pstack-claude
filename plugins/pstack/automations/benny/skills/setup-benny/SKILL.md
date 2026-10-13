@@ -1,6 +1,6 @@
 ---
 name: setup-benny
-description: Configure Benny and prepare its triage and repro automations. Use when installing Benny or changing its Slack, tracker, repository, routing, control, model, or budget settings.
+description: Configure Benny and prepare its triage and repro automations as GitHub Actions workflows or Claude Code routines. Use when installing Benny or changing its intake, runner, tracker, repository, routing, control, model, or budget settings.
 disable-model-invocation: true
 ---
 
@@ -8,17 +8,17 @@ disable-model-invocation: true
 
 Benny ships as a dormant automation pack inside pstack. The plugin manifest exposes only pstack's normal skill root; this file and the two operational files are not slash skills.
 
-The human enters setup by pointing Cursor at the pack's `FOR_AGENTS.md`. The bootstrap flow copies the whole pack into the target repository, then reads this file directly at `.cursor/automations/benny/skills/setup-benny/SKILL.md`.
+The human enters setup by pointing Claude Code at the pack's `FOR_AGENTS.md`. The bootstrap flow copies the whole pack into the target repository, then reads this file directly at `.claude/automations/benny/skills/setup-benny/SKILL.md`.
 
-Benny needs external configuration and two live Cursor automations.
+Benny needs external configuration and two live automations. Each runs either as a GitHub Actions workflow on `anthropics/claude-code-action@v1` or as a Claude Code routine (claude.ai/code/routines; research preview, Pro, Max, Team, and Enterprise plans).
 
 Do not create or update an automation until the user explicitly asks. Never put a secret value in plugin files, prompts, or committed configuration.
 
 ## 1. Copy the pack and enable shared pstack skills
 
-Do this before asking for Benny configuration and before invoking the built-in `/automate` skill.
+Do this before asking for Benny configuration and before writing any workflow or routine.
 
-Ask which repository will run the automations. The source pack is the directory containing `FOR_AGENTS.md`. The destination is `<target-repository>/.cursor/automations/benny/`.
+Ask which repository will run the automations. The source pack is the directory containing `FOR_AGENTS.md`. The destination is `<target-repository>/.claude/automations/benny/`. It is deliberately outside `.claude/skills/`, so its `SKILL.md` files never register as project skills.
 
 Merge the entire source pack into the destination:
 
@@ -31,21 +31,33 @@ Merge the entire source pack into the destination:
 
 If this file is already being read from the target destination, treat the copy as complete and run the same verification before continuing.
 
-Add pstack to the target repository's `.cursor/settings.json`. If the file or `.cursor` directory does not exist, create it.
+Install the read-only worker: copy `../../templates/benny-reader.agent.md` to `<target-repository>/.claude/agents/benny-reader.md`. Its `tools: Read, Grep, Glob` list gives it no shell, no MCP tool, and no write path, which is the only worker isolation the operational files accept. If a different file already exists at that path, stop and ask.
 
-Merge this entry into the existing JSON or JSONC:
+Add pstack to the target repository's `.claude/settings.json`. If the file or `.claude` directory does not exist, create it.
+
+Merge these entries into the existing JSON:
 
 ```json
 {
-	"plugins": {
-		"pstack": { "enabled": true }
+	"extraKnownMarketplaces": {
+		"pstack-claude": {
+			"source": { "source": "github", "repo": "dhritcu/pstack-claude" }
+		}
+	},
+	"enabledPlugins": {
+		"pstack@pstack-claude": true
 	}
 }
 ```
 
-Preserve every unrelated top-level setting and every other plugin entry. If `plugins.pstack` already exists, change only its `enabled` value. Preserve comments and valid JSONC syntax when the file uses JSONC. Validate the file after editing it.
+Preserve every unrelated top-level setting, every other marketplace, and every other plugin entry. If `enabledPlugins["pstack@pstack-claude"]` already exists, change only its value. Validate the file after editing it.
 
-Reload the target project or start a fresh agent rooted there. Verify that these shared pstack skills resolve from project scope:
+That file enables pstack for people who open the repository in Claude Code. It does not install pstack in the automation runners:
+
+- The GitHub Action installs plugins only through its `plugin_marketplaces` and `plugins` inputs. Both workflow templates set them to `https://github.com/dhritcu/pstack-claude.git` and `pstack@pstack-claude`.
+- A routine's cloud session does not install plugins from `.claude/settings.json`. Give the routine's environment a setup script that runs `claude plugin marketplace add dhritcu/pstack-claude` and `claude plugin install pstack@pstack-claude`.
+
+Run `claude plugin install pstack@pstack-claude --scope project` in the target repository, then start a fresh Claude Code session rooted there. Verify that these shared pstack skills resolve from project scope:
 
 - `how`
 - `why`
@@ -58,13 +70,13 @@ Reload the target project or start a fresh agent rooted there. Verify that these
 - `principle-fix-root-causes`
 - `principle-prove-it-works`
 
-Do not count a skill loaded from the current session or a user-scoped plugin. The check must show that a fresh agent in the target repository receives pstack through project settings.
+Do not count a skill loaded from the current session or a user-scoped plugin. The check must show that a fresh agent in the target repository receives pstack through project settings. `claude plugin list` shows the scope each plugin is enabled at. Repeat the same check inside the runner during step 8's test run.
 
 If project-scoped plugin installation is unavailable or any shared dependency does not resolve, stop and explain the failure.
 
-The Benny files are read directly from `.cursor/automations/benny/`. Do not add that directory to a plugin manifest or expect its `SKILL.md` files to appear in the slash-skill list.
+The Benny files are read directly from `.claude/automations/benny/`. Do not add that directory to a plugin manifest or expect its `SKILL.md` files to appear in the slash-skill list.
 
-Tell the user that `.cursor/settings.json`, `.cursor/automations/benny/`, and any referenced secret-free configuration must be committed before either automation is enabled. Do not commit them unless the user asks.
+Tell the user that `.claude/settings.json`, `.claude/agents/benny-reader.md`, `.claude/automations/benny/`, and any referenced secret-free configuration must be committed before either automation is enabled. Do not commit them unless the user asks.
 
 Once this check passes, live automation prompts may read the committed operational files by their stable repository-relative paths. They must not embed a plugin cache path or copy the file contents.
 
@@ -75,11 +87,11 @@ Open these copied examples:
 - `../../templates/configuration.example.yaml`
 - `../reproduce-and-fix-issues/references/feature-map.example.md`
 
-Create user-owned copies outside `.cursor/automations/benny/`. These are configuration files, not pack files. Example locations:
+Create user-owned copies outside `.claude/automations/benny/`. These are configuration files, not pack files. Example locations:
 
-- Project config, such as `.cursor/benny/configuration.yaml`
-- Project feature map, such as `.cursor/benny/feature-map.md`
-- Project routing map, such as `.cursor/benny/routing.md`
+- Project config, such as `.claude/benny/configuration.yaml`
+- Project feature map, such as `.claude/benny/feature-map.md`
+- Project routing map, such as `.claude/benny/routing.md`
 - User config, such as `~/.config/benny/configuration.yaml`
 - User feature map, such as `~/.config/benny/feature-map.md`
 
@@ -87,7 +99,7 @@ Fill one feature-map section for every user-facing feature the automation may re
 
 Do not edit the copied examples. Pack refreshes may update source-managed files after conflict review, but they must never touch the user-owned copies.
 
-Prefer committed, secret-free files in the target repository when a fresh automation checkout must read them. Otherwise paraphrase the required values into the live prompt. Reference a repository file only after the built-in `/automate` skill confirms that the file is committed in the repository where the automation runs.
+Prefer committed, secret-free files in the target repository when a fresh automation checkout must read them. Otherwise paraphrase the required values into the live prompt. Reference a repository file only after you confirm with `git ls-files` and the default branch that the file is committed in the repository where the automation runs. User-level paths such as `~/.config/benny/` do not exist on a GitHub runner or in a routine's cloud session.
 
 Use stable repository-relative paths for committed pack and configuration files. Never reference the plugin source directory or a plugin cache path from a live automation.
 
@@ -95,10 +107,13 @@ Use stable repository-relative paths for committed pack and configuration files.
 
 Ask for or confirm:
 
-- Source Slack channel ID
+- Runner: GitHub Action (default) or Claude Code routine
+- Intake type: GitHub Issues (works everywhere), Slack, or Linear. Slack and Linear need a routine with that connector, or a schedule workflow with that MCP server configured through `claude_args` `--mcp-config`
+- Intake source: `owner/repo` and intake label, Slack channel ID, or Linear team and label
 - Optional operations or status channel ID
 - Repository URL and default branch
-- Triage identity or Slack user ID
+- Triage identity: `claude[bot]` for the GitHub Action's default auth, the routine owner's own GitHub login or Slack user ID for a routine
+- Name of the auth secret: `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN`. Never the value
 - Issue tracker type, team, project, labels, and intake status
 - Tracker adapter skill or MCP actions
 - Optional routing map path
@@ -107,20 +122,20 @@ Ask for or confirm:
 - Status emoji strings
 - Pull request URL format
 - Polling and effort budgets
-- Model slug for triage, repro, code work, and media review
+- Model for triage, repro, code work, and media review
 
-Use only model slugs shown as available in the user's Cursor model picker or supported model list. Do not guess a slug and do not carry over a private default.
+Use only Claude model aliases (`fable`, `opus`, `sonnet`, `haiku`) or a full model ID the user names. The workflow passes it as `--model` in `claude_args`. A routine sets it in the prompt's model selector. Workers get it through the `Agent` call's `model` parameter. Do not guess a model ID and do not carry over a private default.
 
-The source channel, triage identity, repository, tracker adapter, control skill, and feature map must be explicit. Fail setup if any required value stays ambiguous.
+The intake source, triage identity, repository, tracker adapter, control skill, and feature map must be explicit. Fail setup if any required value stays ambiguous.
 
-Use pstack's `unslop` skill on the final automation names, descriptions, and prompt shims before saving them.
+Use pstack's `unslop` skill on the final automation names, descriptions, and prompts before saving them.
 
 ## 4. Check integration capabilities
 
 The triage automation needs:
 
-- Read access to the configured source Slack channel and its threads
-- Thread-reply access in that channel
+- Read access to the configured intake source and its threads (issue comments, Slack threads, or Linear comments)
+- Thread-reply access at that source
 - Attachment metadata and file download access when reports include media
 - Search, read, create, and update access through the configured issue-tracker adapter
 
@@ -133,7 +148,12 @@ The repro automation needs:
 - A pull request action that can open a draft pull request
 - The configured control-adapter skill
 
-Prefer configured Cursor Slack actions for reads and posts. The optional `BENNY_SLACK_BOT_TOKEN` may fill a narrow gap such as editing one operations status message or downloading an attachment. Store the value in a secret manager or environment, not in YAML.
+Map each need to a real action for the chosen runner:
+
+- GitHub Action: `gh` with the job's `permissions:` (`issues: write` for triage; `contents: write`, `issues: write`, and `pull-requests: write` for repro) and the matching `--allowedTools` entries in `claude_args`. Tools outside that list are unavailable to the run. MCP servers for Slack or Linear go in `claude_args` with `--mcp-config`, and their tools must also be listed in `--allowedTools`.
+- Routine: the session's built-in GitHub tools or `gh api` REST calls (the routine's GitHub proxy rejects `gh issue` and `gh pr`), plus the claude.ai connectors you keep on the routine. Remove every connector the routine does not need: a routine can use every tool of an included connector, writes included, without asking. Anything a routine posts appears as the routine owner.
+
+Prefer these configured actions for reads and posts. The optional `BENNY_SLACK_BOT_TOKEN` may fill a narrow gap such as editing one operations status message or downloading an attachment. Store the value in a GitHub Actions secret or a routine environment's network secret, not in YAML.
 
 Do not use undocumented integration endpoints.
 
@@ -141,7 +161,7 @@ Do not use undocumented integration endpoints.
 
 If the user wants reroutes or owner pings:
 
-1. Copy `../triage-issue-reports/references/routing.example.md` outside `.cursor/automations/benny/`.
+1. Copy `../triage-issue-reports/references/routing.example.md` outside `.claude/automations/benny/`.
 2. Replace every placeholder with public or organization-local values.
 3. Keep owner pings off by default.
 4. Allow a ping only for a configured feature owner or a confirmed likely regression author.
@@ -162,6 +182,8 @@ Confirm that the named skill can:
 - Start and stop a recording
 - Clean up its processes and temporary data
 
+Confirm it in the runner, not only on this machine. A GitHub-hosted runner or a routine's cloud session has no display or local accounts by default: list the setup steps (workflow steps before the action, or the routine environment's setup script and network access) the adapter needs to bring the app up there.
+
 If any capability is missing, leave the repro automation disabled. It must fail closed rather than claim a reproduction it did not perform.
 
 ## 7. Prepare the live automations
@@ -169,6 +191,17 @@ If any capability is missing, leave the repro automation disabled. It must fail 
 Ask whether this is first-time creation or configuration of existing automations.
 
 Read `../../FOR_AGENTS.md` from the copied pack as the primary user-intent source for either path. Use it to understand the two triggers, tools, instructions, outcomes, and shared rules.
+
+### Choose triggers
+
+GitHub Action, GitHub Issues intake (the default):
+
+- Both workflows trigger on `issues` `labeled` with `intake.source_label`. The action runs only for actors with write access, so a maintainer applying the label is the intake gate. Do not set `allowed_non_write_users` to let `issues` `opened` from anyone start Benny; the action's own security notes call that input a significant risk.
+- Repro waits in its job for the marker, as upstream's same-trigger design does. The alternative is an `issue_comment` trigger filtered on the triage identity and a marker. Comments posted with the workflow's `GITHUB_TOKEN` start no other workflow, and the action ignores bot actors unless `allowed_bots` names them, so this needs `claude[bot]` auth and `allowed_bots: "claude[bot]"`. Offer it only when the user asks.
+
+GitHub Action, Slack or Linear intake: a `schedule:` workflow sweeps the source on a cron, with the connector configured as an MCP server through `--mcp-config`. Each run handles every unhandled report as the operational files' intake sections describe.
+
+Routine: a routine's GitHub trigger covers only pull request and release events, so it cannot start on a new issue. Use a schedule trigger (at most hourly; the run sweeps) or an API trigger that whatever watches the intake fires with the report's coordinates as `text`. The fired `text` arrives as untrusted data in a `<routine-fire-payload>` block, so the routine prompt must say to read only the coordinates from it.
 
 ### First-time creation
 
@@ -178,80 +211,78 @@ For each automation:
 
 1. Read the matching copied prompt template as secondary internal source material.
 2. Turn `FOR_AGENTS.md`, the finished Benny configuration, and the template intent into a complete natural-language request.
-3. Tell the live prompt to read and follow its exact committed operational file under `.cursor/automations/benny/`.
+3. Tell the live prompt to read and follow its exact committed operational file under `.claude/automations/benny/`.
 4. Use the stable repository-relative path, not a plugin source or cache path. Do not copy the operational file contents into the live prompt.
-5. Read and follow the built-in `automate` skill.
-6. Let `automate` discover Slack channels, the repository, and connected integrations.
-7. Let `automate` confirm that the copied pack and any referenced configuration files are committed in the same repository where the automation will run.
-8. Let `automate` show its draft table, obtain approval, ask readiness, and open the Automations editor.
-9. Finish the editor handoff for this automation before starting the next one.
+5. Confirm that the copied pack, `.claude/agents/benny-reader.md`, and any referenced configuration files are committed on the default branch of the repository where the automation will run.
+6. Draft the automation:
+   - GitHub Action: fill `../../templates/benny-triage.workflow.yml` or `../../templates/benny-reproduce.workflow.yml` into `<target-repository>/.github/workflows/benny-triage.yml` or `benny-reproduce.yml`. Set `{{AUTH_INPUT}}` to `anthropic_api_key` or `claude_code_oauth_token` and `{{AUTH_SECRET_NAME}}` to the secret's name. Size `timeout-minutes` from the budgets. Narrow `--allowedTools` to the commands the tracker adapter and control adapter need.
+   - Routine: write the routine's name, prompt, repository, model, environment (network access and setup script), connectors, and trigger as a draft for the user to enter at claude.ai/code/routines, or through `/schedule` for a schedule trigger. An API trigger is added on the web, and its token is shown once: the user stores it in the firing tool's secret store and never pastes it into chat or a file.
+7. Show the user the draft, every permission and connector it grants, and the secret names it expects. Wait for explicit approval.
+8. Ask the user to add the secret in the repository's Actions secrets, or to create the routine, themselves. Never ask for the secret value.
+9. Finish this automation, including its test in step 8, before starting the next one.
 
-Give `automate` this complete triage intent, filled from configuration:
+The triage automation, filled from configuration:
 
 - Name `benny-triage`.
-- Read and follow `.cursor/automations/benny/skills/triage-issue-reports/SKILL.md` for every run.
-- Trigger on each new top-level report in the configured source Slack channel.
+- Read and follow `.claude/automations/benny/skills/triage-issue-reports/SKILL.md` for every run.
+- Trigger on each new report at the configured intake.
 - Read the triggering thread and reply only inside it.
 - Use the configured issue-tracker integration.
 - Classify, inspect evidence, trace cause, dedupe, and create only clear new bugs.
 - End one thread-only verdict with the configured `[benny:bug]`, `[benny:performance]`, or `[benny:other]` marker and optional tracker URL.
 - Never post a source-channel root message.
 
-After the triage editor handoff is complete, give `automate` this complete repro and fix intent:
+After triage is finished, the repro and fix automation:
 
 - Name `benny-reproduce`.
-- Read and follow `.cursor/automations/benny/skills/reproduce-and-fix-issues/SKILL.md` for every run.
-- Trigger on the same new top-level reports in the configured source Slack channel.
+- Read and follow `.claude/automations/benny/skills/reproduce-and-fix-issues/SKILL.md` for every run.
+- Trigger on the same new reports at the configured intake.
 - Use the configured repository and default branch.
 - Read the source thread and reply only inside it.
-- Include pull request creation and the configured tracker, control-adapter, and feature-map requirements. Paraphrase mapped user paths and states unless `automate` confirms an eligible committed file in the same repository.
+- Include pull request creation and the configured tracker, control-adapter, and feature-map requirements. Paraphrase mapped user paths and states unless the feature map is committed in the same repository.
 - Wait for a trusted triage marker before acting.
 - Reproduce the exact symptom twice through the mapped real UI and capture evidence.
 - Verify an existing fix without authoring over it.
 - Attempt an optional bounded fix only after confirmed repro, then open a draft pull request when proof and checks pass.
 - Never post a source-channel root message.
 
-Do not duplicate `automate`'s Slack, repository, integration, completeness, authentication, draft-review, approval, readiness, or editor-handoff work.
-
 ### Existing automations
 
-The built-in `automate` skill is creation-only. Do not use it to search for, inspect, or update existing automations.
+Do not create replacements or duplicates. Find the existing `.github/workflows/benny-*.yml` files, or ask the user to open the routines at claude.ai/code/routines (`/schedule list` shows them).
 
-Finish configuration, routing, control-adapter, and feature-map validation. Then give the user this concise editor checklist.
+Finish configuration, routing, control-adapter, and feature-map validation. Then check each field below. Propose workflow edits as a diff for approval. For a routine, give the user this checklist to edit on its page.
 
 For the existing triage automation, update:
 
 - Name and description
-- Direct instruction to read `.cursor/automations/benny/skills/triage-issue-reports/SKILL.md`
-- New top-level Slack report trigger and source channel
-- Slack thread read and reply capabilities
+- Direct instruction to read `.claude/automations/benny/skills/triage-issue-reports/SKILL.md`
+- Intake trigger and source
+- Thread read and reply capabilities
 - Issue-tracker integration
 - Paraphrased triage instructions, thread-only rule, and Benny verdict markers
 
 For the existing repro automation, update:
 
 - Name and description
-- Direct instruction to read `.cursor/automations/benny/skills/reproduce-and-fix-issues/SKILL.md`
-- Matching Slack trigger and source channel
+- Direct instruction to read `.claude/automations/benny/skills/reproduce-and-fix-issues/SKILL.md`
+- Matching intake trigger and source
 - Repository and default branch
-- Slack thread read and reply capabilities
+- Thread read and reply capabilities
 - Pull request action
 - Tracker, control-adapter, and feature-map requirements
 - Paraphrased marker wait, evidence, verification, and bounded-fix instructions
 
-Ask the user to update each existing automation directly in its Automations editor. Do not create replacements or duplicates.
-
 ### Creation boundary
 
-Never call a direct automation backend service or backend automation tool. Never use a browser URL that carries draft fields. Never build or open a Cursor protocol deep link. For new automations, the only finish path is the built-in `automate` skill's reviewed Automations editor handoff.
+Never call the routines API or any automation backend to create or fire a routine on the user's behalf. Never write, print, or commit a secret value or a routine token. A workflow file is not live until it is committed to the default branch, so commit it only when the user explicitly asks.
 
-Do not enable either automation until the thread-safety test passes after the editor save.
+Do not enable either automation until the thread-safety test passes. Until then, keep the workflow uncommitted or disabled (`gh workflow disable`), and keep the routine switched off.
 
 ## 8. Test thread safety
 
-Use a test channel or a harmless test report.
+Use a test repository, a test channel, or a harmless test report.
 
-Before testing, confirm that the target repository's `.cursor/settings.json`, `.cursor/automations/benny/`, and every referenced secret-free configuration file are committed on the branch used by the automation checkout. Confirm that both live prompts point at their exact committed operational files. If any check fails, stop. Tell the user that the automation cannot be enabled yet.
+Before testing, confirm that the target repository's `.claude/settings.json`, `.claude/agents/benny-reader.md`, `.claude/automations/benny/`, and every referenced secret-free configuration file are committed on the branch used by the automation checkout. Confirm that both live prompts point at their exact committed operational files. If any check fails, stop. Tell the user that the automation cannot be enabled yet.
 
 Verify:
 
@@ -262,5 +293,7 @@ Verify:
 5. No source-channel root message appears.
 6. A delegated worker cannot use any Slack write action.
 7. Missing coordinates, a deleted parent, or a failed preflight produces no post and no tracker issue.
+
+Read the evidence in the workflow run log or the routine's run session, not the green status: a green routine run means only that the session started and exited. Check there that pstack's shared skills resolved in the runner.
 
 Enable normal traffic only after all seven checks pass.

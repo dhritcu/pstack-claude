@@ -1,0 +1,17 @@
+{
+  "name": "pstack-claude",
+  "owner": {
+    "name": "dhritcu"
+  },
+  "metadata": {
+    "description": "Claude Code port of Cursor's pstack (github.com/cursor/plugins/tree/main/pstack)."
+  },
+  "plugins": [
+    {
+      "name": "pstack",
+      "source": "./plugins/pstack",
+      "description": "poteto's rigorous engineering workflows for Claude Code: poteto-mode router, 24 playbooks, 24 principles, review panels, and PR tooling.",
+      "category": "development"
+    }
+  ]
+}

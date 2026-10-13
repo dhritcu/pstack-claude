@@ -1,0 +1,29 @@
+- poteto-mode/SKILL.md: frontmatter is `name: poteto-mode` with no `disable-model-invocation`, `mode`, `icon`, `color` or `reminder` — the hooks route into it with the Skill tool and carry the reminder (PORTING Hooks).
+- poteto-mode/SKILL.md: "create-skill" trigger points at `playbooks/authoring-a-skill.md` and Claude Code's skill format — Cursor built-in has no Claude Code twin.
+- poteto-mode/SKILL.md: "Shipping UI / IDE / CLI" names the driver order (`verify-<app>`, then `control-ui`/`control-cli`), never `/verify` — the model cannot invoke the bundled `/verify` (prior-port #71).
+- poteto-mode/SKILL.md: dropped the "not Cursor's built-in babysit skill" clause — Claude Code has no built-in babysit.
+- poteto-mode/SKILL.md: two trigger lines added, managed-platform deploy loads that platform's skill first, and severity decides a mid-task defect's artifact — prior-port #59 items 6 and 7.
+- poteto-mode/SKILL.md: Subagents says `pstack:poteto-agent` preloads poteto-mode via `skills:` but the parent still passes this file's path — prior-port #264.
+- poteto-mode/SKILL.md: Agent defaults drop "agent mode (readonly strips MCP)", name `sonnet`/`opus`/`fable` with `effort` from the sheet's budget, `inherit` replaces `inherit-parent`/`auto`, and a rejected model falls back with a note — PORTING Models.
+- poteto-mode/SKILL.md: "a different model" for a second opinion now says a different Claude model — single vendor (PORTING Models).
+- poteto-mode/SKILL.md: Playbooks names `TaskCreate`/`TaskUpdate` for the todolist, else an uncommitted `.audit/<task-slug>.todo.md` — prior-port #72 and #229.
+- playbooks/opening-a-pr.md: Worktree adds the `isolation: "worktree"` default-branch base caveat — PORTING Worktrees for delegates; delegates otherwise silently lose the branch's commits.
+- playbooks/opening-a-pr.md: Worktree adds "drain every live agent, grandchildren included, before commit/merge/deploy" — prior-port #59 item 1.
+- playbooks/babysit.md, shipping.md: "`/loop` in dynamic mode" → "self-paced mode (no interval)" — Claude Code's name for the same `/loop` mode.
+- playbooks/shipping.md, autopilot-full.md, autopilot-stack.md: Cursor cloud agents → background subagents with `isolation: "worktree"` — PORTING (no cloud agents; each verifier/owner needs its own checkout).
+- playbooks/autopilot-full.md: dropped "`/loop` works in local and cloud roots" — no cloud root on Claude Code.
+- playbooks/autopilot-full.md: pre-review checks named by "CLAUDE.md or AGENTS.md files and rules" — Claude Code reads CLAUDE.md.
+- playbooks/multi-phase-plan.md: plan file default is `${CLAUDE_CONFIG_DIR:-~/.claude}/orchestrate/<project-slug>/docs/` — Claude Code has no per-agent store path in the system prompt.
+- playbooks/multi-phase-plan.md: check-plan command is skill-relative `node scripts/check-plan.mjs` — upstream's `pstack/skills/...` is upstream's repo layout, not an install path.
+- playbooks/multi-phase-plan.md: live lanes run in their own worktree, not a cloud VM; the video is recorded in a lane's worktree — no cloud VMs.
+- playbooks/orchestrate.md: store moved to `${CLAUDE_CONFIG_DIR:-~/.claude}/orchestrate/<project-slug>/` — no store path in the system prompt; must outlive the session.
+- playbooks/orchestrate.md: sub-coordinator nesting hedged ("where the runtime lets a subagent spawn one", else owns units directly) — Claude Code's nesting depth is not documented in PORTING.
+- playbooks/orchestrate.md: workers are background subagents (writers in worktrees); cloud/local spawn split, "cloud default and local exception list", and cloud-only verbatim paste removed — everything runs locally.
+- playbooks/orchestrate.md: "Restacks run in cloud" → serialized in the stacker's worktree; "one VM dies" → "one worktree when its agent dies"; liveness probes the background task list, not the Cursor dashboard; restart recovery reattaches by PR/branch — no cloud tier.
+- playbooks/orchestrate.md: verifier "different model family" glossed as a different Claude model — single vendor.
+- playbooks/session-pickup.md: transcript location is `${CLAUDE_CONFIG_DIR:-~/.claude}/projects/<encoded-cwd>/<session-id>.jsonl` with `../reflect/scripts/find-transcript.mjs`; cloud-agent URL → session ID — PORTING Paths/Tools.
+- playbooks/worktree-cleanup.md: "pinned chats / sidebar" → sessions the user is keeping, from the user — Claude Code has no pinned-chat sidebar.
+- playbooks/worktree-cleanup.md: Cursor app-data reclaimer replaced by old transcripts under `~/.claude/projects/` (`cleanupPeriodDays`) — closest Claude Code equivalent.
+- skills/poteto-mode/playbooks/multi-phase-plan.md: pstack skills are re-read from the installed plugin (<pstack root>/skills/...) instead of `git show origin/main:pstack/skills/...`; the project's control skill stays on trunk — a plugin user's repo does not vendor pstack.
+- skills/poteto-mode/SKILL.md: states its own directory via ${CLAUDE_SKILL_DIR} so playbook script paths and ../<name> skill paths resolve absolutely.
+- skills/poteto-mode/playbooks/autopilot-{full,stack}.md: per-tick re-read from the installed plugin root, not git show origin/main:pstack/... (same reason as multi-phase-plan).

@@ -1,6 +1,6 @@
 ---
 name: reproduce-and-fix-issues
-description: Reproduce triaged Slack bugs through a configured app-control adapter, verify existing fixes, and open a bounded draft pull request only after before-and-after proof. Use only from the configured Benny repro automation.
+description: Reproduce triaged bug reports from GitHub Issues, Slack, or Linear through a configured app-control adapter, verify existing fixes, and open a bounded draft pull request only after before-and-after proof. Use only from the configured Benny repro automation.
 disable-model-invocation: true
 ---
 
@@ -10,6 +10,12 @@ Wait for a trusted triage marker in the source thread. Reproduce the exact sympt
 
 Load the external Benny configuration supplied by the automation. If the config, required actions, control adapter, or completed feature map is missing, fail closed.
 
+## Intake adapter
+
+This file speaks Slack's vocabulary. When `intake.type` is not `slack`, read every Slack term, write action, and credential through the intake table in `../triage-issue-reports/SKILL.md`, and use the configured `intake.*_action` values. The source issue's comment thread is the source thread. The optional operations thread exists only when `intake.operations_channel_id` names a Slack channel; otherwise status lives in the run output.
+
+A sweep run (a schedule trigger) lists reports from `intake.source_id` within `runner.sweep_window_hours` whose source thread holds a trusted `bug` or `performance` marker and no repro outcome yet, then runs this whole file once per report, sequentially, each with its own frozen coordinates.
+
 ## Hard safety rules
 
 - Freeze the source channel and root thread coordinates before doing any work.
@@ -17,7 +23,7 @@ Load the external Benny configuration supplied by the automation. If the config,
 - Preflight the source parent before every source-thread post.
 - The coordinator is the only Slack poster.
 - Delegated analysis workers are read-only and return findings or media notes.
-- A fix-phase code worker may edit only when its environment provably excludes Slack credentials and every Slack write action. Otherwise the coordinator edits.
+- A fix-phase code worker may edit only when its environment provably excludes Slack credentials and every Slack write action. Otherwise the coordinator edits. On Claude Code a subagent inherits the session's MCP connectors and, through Bash, the run's tokens, so only an agent whose `tools` list has no Bash and no MCP tool qualifies. Setup installs `benny-reader` (`tools: Read, Grep, Glob`) for analysis; delegate analysis only to it, with `subagent_type: "benny-reader"`.
 - Every child prompt must explicitly forbid `SendSlackMessage`, `PostToSlack`, `chat.postMessage`, and all other Slack writes.
 - Never give a child a Slack token, posting instructions, source coordinates for posting, or permission to report externally.
 - If a child needs Slack write access to run, do not launch it.
@@ -59,7 +65,7 @@ Watch the source thread for the configured verdict budget. Stay silent while wai
 
 Accept a verdict only when:
 
-- Its author matches `slack.triage_identity_user_id`.
+- Its author matches `intake.triage_identity`.
 - It is a reply under `SOURCE_THREAD_TS`.
 - It contains exactly one configured marker.
 
@@ -104,7 +110,7 @@ If a person owns the work but has not produced an artifact, stop. Do not race th
 
 ## 4. Open an optional operations thread
 
-If `slack.operations_channel_id` is configured, the coordinator may create one root status message there. This is the only allowed root post in the repro workflow.
+If `intake.operations_channel_id` is configured, the coordinator may create one root status message there. This is the only allowed root post in the repro workflow.
 
 Store its coordinates as `OPERATIONS_CHANNEL_ID` and `OPERATIONS_THREAD_TS`. Never confuse them with the source coordinates.
 
@@ -119,13 +125,13 @@ Use the configured plain Unicode status strings. Keep status text short:
 - Draft pull request opened
 - Fix did not land
 
-Prefer configured Cursor Slack actions. Use `BENNY_SLACK_BOT_TOKEN` only when the user configured it for a narrow missing capability such as editing this one status message. Never expose the token to a worker.
+Prefer the configured intake actions (the Slack connector or MCP server). Use `BENNY_SLACK_BOT_TOKEN` only when the user configured it for a narrow missing capability such as editing this one status message. Never expose the token to a worker.
 
-If no operations channel is configured, keep detailed status in the automation run output. Do not substitute a source-channel root message.
+If no operations channel is configured, keep detailed status in the automation run output (the workflow run log, or the routine's run session). Do not substitute a source-channel root message.
 
 ## 5. Load and check the control adapter
 
-Read `references/control-adapter.md` and the completed map at `control.feature_map_path`, then invoke the skill named by `control.skill_name`.
+Read `references/control-adapter.md` and the completed map at `control.feature_map_path`, then load the skill named by `control.skill_name` (a project skill under `.claude/skills/`, such as `verify-<app>`, or pstack's `control-ui` or `control-cli`).
 
 Find the feature-map section that matches the reported user path. Read it before driving the app. If no section covers the feature, mark the run blocked instead of inventing a path or selector.
 
@@ -156,7 +162,7 @@ Collect:
 - Attachments and error signatures
 - Candidate code area
 
-Inspect screenshots and video. Use read-only parallel workers for code history, test ideas, blast-radius mapping, and media review when useful. Each worker gets a narrow question and the Slack-write prohibition.
+Inspect screenshots and video. Use read-only parallel workers for code history, test ideas, blast-radius mapping, and media review when useful. Each worker gets a narrow question and the Slack-write prohibition. `benny-reader` runs no commands, so the coordinator writes any `git log`, `git blame`, or search output it needs to a file and passes the path.
 
 Use pstack's `how` skill to trace the action through the repository. Use `why` for regression history and defensive code. Form competing cause hypotheses and identify evidence that would separate them.
 
@@ -191,7 +197,7 @@ For a successful repro:
 - Save a short note with the exact steps and observed state.
 - Keep artifacts in the configured temporary artifact directory.
 
-Have a read-only media reviewer answer one question: does the evidence visibly show the discriminating broken state?
+Have a read-only media reviewer (`benny-reader` on `models.media_review`, given frame and screenshot paths the coordinator extracted) answer one question: does the evidence visibly show the discriminating broken state?
 
 If the answer is no or uncertain, the repro is not confirmed. Capture better evidence or use `Could not reproduce`.
 

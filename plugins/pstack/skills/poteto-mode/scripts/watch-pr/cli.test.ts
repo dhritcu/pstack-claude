@@ -214,6 +214,117 @@ describe("main", () => {
     });
   });
 
+  describe("a PR in a repository with no checks configured", () => {
+    // What GitHub returns for a clean PR with no CI: `gh pr checks` exits 1
+    // with "no checks reported", and the head commit's rollup is null.
+    const noCi = (facts = {}) =>
+      fakeReader({
+        facts: { headRefOid: "head", ...facts },
+        fastPath: { kind: "none-reported" },
+        rollupPages: [{ kind: "no-rollup" }],
+        commitRollups: [{ oid: "head", state: null }],
+      });
+    const args = ["--owner", "owner", "--repo", "repo", "--pr", "1"];
+
+    it("finishes a status-only pass instead of retrying", async () => {
+      const harness = testRuntime(noCi());
+      expect(await main([...args, "--status-only"], harness.runtime)).toBe(0);
+      expect(harness.stdout).toHaveLength(1);
+      expect(JSON.parse(harness.stdout[0])).toMatchObject({
+        kind: "STATUS",
+        terminal: true,
+        exitCode: 0,
+        rows: [{ kind: "open", ci: { kind: "ci-none" } }],
+      });
+    });
+
+    it("reports READY when mergeability, threads, and gates are clear", async () => {
+      const harness = testRuntime(noCi());
+      expect(await main(args, harness.runtime)).toBe(0);
+      expect(JSON.parse(harness.stdout[0])).toMatchObject({
+        kind: "READY",
+        scope: { pr: { proof: { ci: { kind: "ci-none" } } } },
+      });
+      expect(
+        renderPretty(JSON.parse(harness.stdout[0]) as WatcherVerdict)
+      ).toContain("checks=none configured on the head commit");
+    });
+
+    it("still stops on merge conflicts", async () => {
+      const harness = testRuntime(
+        noCi({ mergeable: "CONFLICTING", mergeStateStatus: "DIRTY" })
+      );
+      expect(await main(args, harness.runtime)).toBe(2);
+    });
+
+    it("still stops on a merge gate", async () => {
+      const harness = testRuntime(
+        noCi({ reviewDecision: "CHANGES_REQUESTED" })
+      );
+      expect(await main(args, harness.runtime)).toBe(6);
+    });
+
+    it("still stops on unresolved review threads", async () => {
+      const reader = fakeReader({
+        facts: { headRefOid: "head" },
+        fastPath: { kind: "none-reported" },
+        rollupPages: [{ kind: "no-rollup" }],
+        commitRollups: [{ oid: "head", state: null }],
+        threads: [
+          {
+            id: "t1",
+            firstComment: null,
+            isBugbot: false,
+            bugbotReviewPasses: 0,
+          },
+        ],
+      });
+      const harness = testRuntime(reader);
+      expect(await main(args, harness.runtime)).toBe(3);
+    });
+
+    for (const [label, reader] of [
+      [
+        "the checks query fails",
+        fakeReader({
+          fastPath: {
+            kind: "unusable",
+            exitCode: 4,
+            stderr: "HTTP 401: Bad credentials",
+          },
+          rollupPages: [{ kind: "no-rollup" }],
+          commitRollups: [{ oid: "head", state: null }],
+        }),
+      ],
+      [
+        "an earlier commit reported checks",
+        fakeReader({
+          fastPath: { kind: "none-reported" },
+          rollupPages: [{ kind: "no-rollup" }],
+          commitRollups: [
+            { oid: "old", state: "SUCCESS" },
+            { oid: "head", state: null },
+          ],
+        }),
+      ],
+      ["GitHub reports BLOCKED", noCi({ mergeStateStatus: "BLOCKED" })],
+      ["mergeability is still computing", noCi({ mergeable: "UNKNOWN" })],
+    ] as const)
+      it(`fails closed as checks-unavailable when ${label}`, async () => {
+        const harness = testRuntime(reader);
+        expect(
+          await main([...args, "--max-query-errors", "1"], harness.runtime)
+        ).toBe(7);
+        expect(JSON.parse(harness.stdout[0])).toMatchObject({
+          kind: "BLOCKER",
+          blocker: {
+            kind: "status-query",
+            failure: { kind: "checks-unavailable", retryable: true },
+          },
+        });
+      });
+  });
+
   it("shows help without touching the reader", async () => {
     const reader = fakeReader();
     const harness = testRuntime(reader);

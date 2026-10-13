@@ -52,9 +52,11 @@ prs=$(mktemp)
 gh pr list --author "@me" --state all --limit 1000 \
 	--json number,state,headRefName 2>/dev/null > "$prs" || echo "[]" > "$prs"
 
-# Transcripts dir: ~/.cursor/projects/<slugified-repo-path>/agent-transcripts.
-slug=$(printf '%s' "$main_wt" | sed 's#^/##; s#/#-#g')
-transcripts="$HOME/.cursor/projects/$slug/agent-transcripts"
+# Claude Code stores each session at <config>/projects/<encoded-cwd>/*.jsonl,
+# where the encoding replaces every non-alphanumeric character with "-".
+projects="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects"
+encode() { printf '%s' "$1" | sed 's/[^a-zA-Z0-9]/-/g'; }
+main_transcripts="$projects/$(encode "$main_wt")"
 now=$(date +%s)
 
 echo "# base: $base"
@@ -91,11 +93,17 @@ git worktree list --porcelain | awk '/^worktree /{print $2}' | while read -r wt;
 		'.[] | select(.headRefName==$b) | "#\(.number)/\(.state)"' "$prs" 2>/dev/null | head -1)
 	[ -z "$pr" ] && pr="-"
 
-	# Most recent chat whose transcript operated in this worktree. Match path
-	# followed by "/" or a quote so glint-482 does not match glint-482-r37.
+	# Most recent chat whose transcript operated in this worktree: sessions
+	# started in the main checkout, in the worktree, or in a directory below it
+	# (encoded as a prefix). Match path followed by "/" or a quote so glint-482
+	# does not match glint-482-r37.
 	last="-"; last_ts=0
-	if [ -d "$transcripts" ]; then
-		f=$(rg -l -e "${wt}/" -e "${wt}\"" "$transcripts" 2>/dev/null \
+	tdirs=()
+	for d in "$main_transcripts" "$projects/$(encode "$wt")" "$projects/$(encode "$wt")"-*; do
+		[ -d "$d" ] && tdirs+=("$d")
+	done
+	if [ ${#tdirs[@]} -gt 0 ]; then
+		f=$(rg -l -F -e "${wt}/" -e "${wt}\"" "${tdirs[@]}" 2>/dev/null \
 			| xargs stat -f '%m %N' 2>/dev/null | sort -rn | head -1)
 		if [ -n "$f" ]; then last_ts=$(echo "$f" | awk '{print $1}')
 			last=$(date -r "$last_ts" '+%Y-%m-%d' 2>/dev/null); fi

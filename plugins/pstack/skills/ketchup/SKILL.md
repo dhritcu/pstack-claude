@@ -1,12 +1,12 @@
 ---
 name: ketchup
-description: "Catch the user up on everything in this chat since their last message, in plain words. Give each action item an executive summary with enough context to make the call. Use for /ketchup."
+description: "Catch the user up on everything in this chat since their last message, in plain words. Give each action item an executive summary with enough context to make the call. Use for /pstack:ketchup."
 disable-model-invocation: true
 ---
 
 # Ketchup
 
-Catch the user up on everything in this chat since the last message they wrote before `/ketchup`. Notifications and subagent results are not their messages. Write in the plain voice of [`/bro`](../bro/SKILL.md), and skip its restating step. Assume the user remembers their last message and nothing after it. Call each PR, branch, or agent by a name they would know, not by a label you invented during the work.
+Catch the user up on everything in this chat since the last message they wrote before `/pstack:ketchup`. Notifications and subagent results are not their messages. Write in the plain voice of [`/bro`](../bro/SKILL.md), and skip its restating step. Assume the user remembers their last message and nothing after it. Call each PR, branch, or agent by a name they would know, not by a label you invented during the work.
 
 ## Gather what changed
 
@@ -24,4 +24,4 @@ Then give each action item a short executive summary. Cover the decision to make
 
 Show each action item as a before and after, side by side. For a choice, put the current state beside each option, or the options alone when there is no current state. Use screenshots or a video when the change is visible. Otherwise use another artifact, such as a table of numbers, a diff, or a diagram. If no visual exists yet, make one. If you cannot, say plainly that none exists. Never invent a number, and never draw or generate a picture of a screen you did not capture. Link only artifacts that exist.
 
-Prefer visuals to dense prose. Use a table, a Mermaid diagram, a chart, or a generated image.
+Prefer visuals to dense prose. Use a table, a Mermaid diagram, a chart, or a generated image when the session has an image-generation tool.

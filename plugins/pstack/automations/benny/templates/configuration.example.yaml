@@ -4,18 +4,37 @@ automations:
   triage_name: "benny-triage"
   reproduce_name: "benny-reproduce"
 
-slack:
-  source_channel_id: "SOURCE_CHANNEL_ID"
+runner:
+  # "github-action": .github/workflows/benny-triage.yml and benny-reproduce.yml run anthropics/claude-code-action@v1.
+  # "routine": two Claude Code routines (claude.ai/code/routines) with a schedule or API trigger.
+  type: "github-action"
+  # Name of the GitHub Actions secret that holds the credential. Never the value.
+  # ANTHROPIC_API_KEY feeds the action's `anthropic_api_key` input; CLAUDE_CODE_OAUTH_TOKEN feeds `claude_code_oauth_token`.
+  auth_secret_name: "ANTHROPIC_API_KEY"
+  # routine only: hourly or slower sweep, or an API trigger fired by your intake tool.
+  routine_trigger: "schedule"
+  sweep_window_hours: 24
+
+intake:
+  # Where reports arrive: "github-issues", "slack", or "linear".
+  type: "github-issues"
+  # github-issues: "owner/repo". slack: the source channel ID. linear: the team key.
+  source_id: "example-org/example-repo"
+  # github-issues and linear: the label that marks a report for Benny. Leave empty for slack.
+  source_label: "benny"
+  # Optional operations thread: a Slack channel ID, or empty.
   operations_channel_id: ""
-  triage_identity_user_id: "TRIAGE_IDENTITY_USER_ID"
-  read_action: "configured-slack-read-action"
-  thread_post_action: "configured-slack-thread-post-action"
-  file_download_action: "configured-slack-file-download-action"
-  operations_edit_action: "configured-slack-edit-action"
-  prefer_cursor_actions: true
+  # The account whose verdict comments the repro automation trusts.
+  # github-action with default auth posts as "claude[bot]". A routine posts as your own GitHub, Slack, or Linear account.
+  triage_identity: "TRIAGE_IDENTITY"
+  read_action: "configured-intake-read-action"
+  thread_post_action: "configured-intake-thread-post-action"
+  file_download_action: "configured-intake-file-download-action"
+  operations_edit_action: "configured-intake-edit-action"
+  # Name of an environment variable or secret, never its value.
   optional_bot_token_env: "BENNY_SLACK_BOT_TOKEN"
   allow_source_root_posts: false
-  allow_worker_slack_writes: false
+  allow_worker_intake_writes: false
 
 repository:
   url: "https://github.com/example-org/example-repo"
@@ -35,18 +54,18 @@ tracker:
     intake: "intake-label-placeholder"
     needs_repro: "needs-repro-label-placeholder"
   status: "intake-status-placeholder"
-  source_link_title: "Slack report"
+  source_link_title: "Source report"
   require_compensation_action: true
 
 routing:
-  map_path: ".cursor/benny/routing.md"
+  map_path: ".claude/benny/routing.md"
   owner_pings_default: false
   allow_feature_owner_ping: false
   allow_confirmed_regression_author_ping: false
 
 control:
   skill_name: "control-target-app"
-  feature_map_path: ".cursor/benny/feature-map.md"
+  feature_map_path: ".claude/benny/feature-map.md"
   environment: "safe-test-environment-placeholder"
   artifact_directory: "/tmp/benny-artifacts"
   artifact_retention_hours: 24
@@ -77,8 +96,9 @@ budgets:
   fix_minutes: 90
   operations_follow_up_minutes: 45
 
+# Claude model aliases (fable, opus, sonnet, haiku) or a full model ID the user named.
 models:
-  triage: "choose-an-available-public-model-slug"
-  reproduce: "choose-an-available-public-model-slug"
-  code: "choose-an-available-public-model-slug"
-  media_review: "choose-an-available-public-model-slug"
+  triage: "opus"
+  reproduce: "opus"
+  code: "sonnet"
+  media_review: "opus"

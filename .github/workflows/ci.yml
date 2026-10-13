@@ -1,0 +1,30 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+      - name: port lint (no Cursor-only constructs, valid frontmatter, links)
+        run: node tools/check.mjs
+      - name: claude plugin validate
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          claude plugin validate . --strict
+          claude plugin validate plugins/pstack --strict
+      - name: hook script
+        run: node --test tests/*.test.mjs
+      - name: poteto-mode scripts
+        working-directory: plugins/pstack/skills/poteto-mode/scripts
+        run: bun install --frozen-lockfile && bun test
+      - name: reflect transcript finder
+        run: node --test plugins/pstack/skills/reflect/scripts/*.test.mjs
