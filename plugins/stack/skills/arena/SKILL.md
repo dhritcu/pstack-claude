@@ -19,7 +19,7 @@ Every candidate gets the same prompt, so the prompt is the contract.
 
 ## Phase B: Fan out
 
-Spawn all N subagents in one message with `subagent_type: "general-purpose"`, `run_in_background: true`, and `isolation: "worktree"` when candidates write inside the repo, each with the task, the path to the shared grounding, its own output path, and instructions to produce the artifact and a short rationale naming the alternatives it considered and what it rejected.
+Spawn all N subagents in one message with `subagent_type: "general-purpose"`, `run_in_background: true`, and `isolation: "worktree"` when candidates write inside the repo, each with the task, the path to the shared grounding, its own output path, and instructions to produce the artifact and a short rationale naming the alternatives it considered and what it rejected. `isolation: "worktree"` branches from the default branch, not `HEAD`, so commit first and base the worktree per the Worktree paragraph of `../auto/playbooks/opening-a-pr.md`.
 
 If a candidate produces no output, proceed with N-1 and note the dropout.
 
