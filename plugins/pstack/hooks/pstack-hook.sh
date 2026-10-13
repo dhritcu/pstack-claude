@@ -8,6 +8,8 @@
 root="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 sheet="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/pstack-models.md"
 input=$(cat 2>/dev/null)
+# PSTACK_HOOK_DEBUG=<file>: append each event and its input, for diagnosing a hook in a real session.
+[ -n "${PSTACK_HOOK_DEBUG:-}" ] && printf '== %s\n%s\n' "${1:-}" "$input" >> "$PSTACK_HOOK_DEBUG"
 todo='pstack: before any other step, open the todolist poteto-mode requires: the matched playbook'"'"'s steps copied in verbatim, then task-specific todos. Use TaskCreate/TaskUpdate if this session has them; otherwise write an uncommitted .audit/<task-slug>.todo.md checklist and keep it current. A step you skip stays with `skip: <reason>`.'
 
 # `<key>: off` in the sheet turns that hook off (case and spacing tolerant).
@@ -54,6 +56,41 @@ case "${1:-}" in
     # tool; Claude Code often doesn't, so restate the rule and its fallback right as the skill loads.
     printf '%s' "$input" | grep -Eq '"skill"[[:space:]]*:[[:space:]]*"pstack:poteto-mode"' || exit 0
     printf '%s\n' "$todo" | emit PostToolUse
+    ;;
+  agent-effort)
+    # Upstream's model slugs carry the effort (`...-xhigh-fast`), so a pstack spawn could not
+    # drop it. Claude Code takes effort as a separate Agent parameter; fill it for pstack agents
+    # when the caller left it out. Effort comes from the sheet's `budget: <label> (<effort>)`.
+    # Only tool_input is inspected: the hook input also carries the session's own effort.
+    obj=$(printf '%s' "$input" | awk '
+      { buf = buf $0 "\n" }
+      END {
+        i = index(buf, "\"tool_input\"")
+        if (!i) exit
+        rest = substr(buf, i)
+        j = index(rest, "{")
+        if (!j) exit
+        depth = 0; instr = 0; esc = 0; obj = ""
+        for (k = j; k <= length(rest); k++) {
+          c = substr(rest, k, 1); obj = obj c
+          if (instr) { if (esc) esc = 0; else if (c == "\\") esc = 1; else if (c == "\"") instr = 0; continue }
+          if (c == "\"") instr = 1
+          else if (c == "{") depth++
+          else if (c == "}") { depth--; if (depth == 0) break }
+        }
+        if (depth == 0) printf "%s", obj
+      }')
+    [ -n "$obj" ] || exit 0
+    printf '%s' "$obj" | grep -Eq '"subagent_type"[[:space:]]*:[[:space:]]*"pstack:' || exit 0
+    printf '%s' "$obj" | grep -Eq '"effort"[[:space:]]*:' && exit 0
+    effort=xhigh
+    if [ -r "$sheet" ]; then
+      e=$(sed -n 's/^[[:space:]]*budget[[:space:]]*:.*(\([a-z]*\)).*/\1/p' "$sheet" | head -n 1)
+      case "$e" in low|medium|high|xhigh|max) effort=$e ;; esac
+    fi
+    inner=${obj#\{}
+    case "$inner" in *[!\ \	]*) sep=, ;; *) sep= ;; esac
+    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","updatedInput":{"effort":"%s"%s%s}}\n' "$effort" "$sep" "$inner"
     ;;
   subagent-start)
     off "subagent hook" && exit 0

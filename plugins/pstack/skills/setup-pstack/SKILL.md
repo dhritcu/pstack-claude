@@ -44,13 +44,18 @@ Every value written must be `fable`, `opus`, `sonnet`, `haiku`, `inherit`, or a 
 
 ### 5. Write the sheet
 
-Write the sheet with the first line `# pstack model configuration`, a `budget` line with the chosen label and its effort, one line per role using the same labels poteto-mode uses, and the three toggle lines. Overwrite the whole file so re-runs stay idempotent. Shape:
+Write the sheet with the first line `# pstack model configuration`, explanation lines starting with `# ` (pstack's hooks drop them, so only the settings reach each session), a `budget` line with the chosen label and its effort, one line per role using the same labels poteto-mode uses, and the three toggle lines. Overwrite the whole file so re-runs stay idempotent. Shape: Claude Code treats its config directory as sensitive and asks the user before the write. That prompt is expected. If the write is denied, show the sheet and its path instead of working around it.
 
 ```markdown
 # pstack model configuration
-
-One line per role. Delete a line to fall back to the skill default. A value of `inherit` runs the role on the parent session's model (the Agent call omits `model`), and an `inherit` entry in a panel list still counts toward that panel's fan-out. The budget sets the `effort` of every Agent call a role makes. The three toggles default to on. `session hook` injects the poteto-mode routing rule and this sheet at session start, resume, clear, and compact. `reminder` injects the poteto-mode reminder on every prompt, and only runs while `session hook` is on. `subagent hook` gives pstack agents this sheet and general-purpose subagents a pointer to the principles. Set any of them to off to stop it.
-
+# One line per role. Delete a line to fall back to the skill default. A value of `inherit` runs the
+# role on the parent session's model (the Agent call omits `model`), and an `inherit` entry in a
+# panel list still counts toward that panel's fan-out. The budget sets the `effort` of every Agent
+# call a role makes. The three toggles default to on. `session hook` injects the poteto-mode routing
+# rule and this sheet at session start, resume, clear, and compact. `reminder` injects the poteto-
+# mode reminder on every prompt, and only runs while `session hook` is on. `subagent hook` gives
+# pstack agents this sheet and general-purpose subagents a pointer to the principles. Set any of
+# them to off to stop it.
 budget: large (xhigh)
 feature, refactoring: sonnet
 bug-fix: sonnet

@@ -74,3 +74,19 @@ test("poteto-mode loading restates the todolist rule, by Skill tool or typed com
   const plain = context(run("prompt", { stdin: '{"prompt":"fix the feed"}' }).out, "UserPromptSubmit");
   assert.match(plain, /first tool call is the Skill tool/);
 });
+
+test("pstack agent spawns without effort get the budget's effort; others are untouched", () => {
+  const input = JSON.stringify({ tool_name: "Agent", tool_input: { subagent_type: "pstack:poteto-agent", model: "sonnet", prompt: 'a "q" {b} \\ c\n}}', description: "d" } });
+  const filled = JSON.parse(run("agent-effort", { stdin: input }).out).hookSpecificOutput.updatedInput;
+  assert.deepEqual(filled, { effort: "xhigh", subagent_type: "pstack:poteto-agent", model: "sonnet", prompt: 'a "q" {b} \\ c\n}}', description: "d" });
+  const small = JSON.parse(run("agent-effort", { sheet: "budget: small (medium)\n", stdin: input }).out);
+  assert.equal(small.hookSpecificOutput.updatedInput.effort, "medium");
+  assert.equal(run("agent-effort", { stdin: JSON.stringify({ tool_input: { subagent_type: "pstack:readonly", effort: "low", prompt: "p" } }) }).out, "");
+  assert.equal(run("agent-effort", { stdin: JSON.stringify({ tool_input: { subagent_type: "general-purpose", prompt: "p" } }) }).out, "");
+});
+
+test("effort hook ignores the session's own top-level effort field (real Claude Code input shape)", () => {
+  const input = JSON.stringify({ session_id: "s", effort: { level: "medium" }, tool_name: "Agent", tool_input: { description: "d", prompt: "p", subagent_type: "pstack:readonly", model: "haiku", run_in_background: false } });
+  const out = JSON.parse(run("agent-effort", { stdin: input }).out).hookSpecificOutput.updatedInput;
+  assert.deepEqual(out, { effort: "xhigh", description: "d", prompt: "p", subagent_type: "pstack:readonly", model: "haiku", run_in_background: false });
+});
