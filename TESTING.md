@@ -36,6 +36,8 @@ Claude Code 2.1.296, plugin loaded with `claude -p --plugin-dir plugins/pstack`,
 | Worktree cleanup | Routed to the playbook, ran `worktree-audit.sh`, removed nothing because every worktree held uncommitted files (correct) | pass |
 | `watch-pr` on a live public PR with no CI | Port: one pass, `no checks`, exit 0. Upstream on the same PR: `RETRY ... no checks reported` at 60, 120, 240 s. | pass |
 | `/pstack:babysit` check | Read the playbook, resolved the forge, ran the bundled `watch-pr` against a live PR, reported without writing (the public PRs it hit had just been merged by their authors) | pass |
+| Install from the published marketplace | `claude plugin marketplace add dhritcu/pstack-claude` + `claude plugin install pstack@pstack-claude`: the session context names the plugin cache root and lists `pstack:*` skills | pass |
+| `/pstack:babysit drive` on a live PR with real CI (installed plugin) | Read the playbook from the plugin cache, resolved the forge, ran `watch-pr` while CI ran, reported `READY` (CI green, `CLEAN`, `MERGEABLE`) on [#1](https://github.com/dhritcu/pstack-claude/pull/1), did not merge | pass |
 | `/pstack:create-skill` | Built a project skill with a bundled script, then tested it in six real nested `claude -p` sessions: three trigger prompts fired, three near misses did not; fixed one issue found in round 1 and reran | pass |
 
 Not run live: benny (needs a repository secret and a workflow run), make-bot-ui (needs a routine and its token), orchestrate and the autopilots (multi-hour programs). Their mechanics (background subagents, worktrees, `watch-pr`, `/loop`) are covered by the rows above.
