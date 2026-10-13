@@ -90,7 +90,7 @@ Use evidence already in the thread before asking the reporter for more.
 
 ## 3. Trace cause before routing
 
-Do a bounded source and history pass before choosing an owner or destination. Use pstack's `how` skill to trace the path from the reported action to the observed result. Use `why` when the report looks like a regression or touches defensive code.
+Do a bounded source and history pass before choosing an owner or destination. Use pstack's `how` skill to trace the path from the reported action to the observed result. Use `why` when the report looks like a regression or touches defensive code. Both normally spawn `pstack:readonly` subagents, which keep Bash and MCP, so here run their steps in the coordinator, or brief `benny-reader` in place of each spawn.
 
 1. Identify the likely code path from the reported action to the observed result.
 2. Check whether the visible symptom belongs to that code path or a dependency below it.

@@ -2,7 +2,7 @@
 
 **You own the skill's voice.**
 
-1. Write it in Claude Code's skill format (https://code.claude.com/docs/en/skills): a `SKILL.md` whose YAML frontmatter has a lowercase-hyphen `name` equal to its directory name and a `description` that says what it does and when to use it.
+1. Use the **create-skill** skill (`../create-skill/SKILL.md`).
 2. Validate the skill: frontmatter has `name` and `description`, referenced files exist, cross-skill links resolve.
 3. Test cases if structural. Skip if subjective.
 4. Run **Opening a PR**.

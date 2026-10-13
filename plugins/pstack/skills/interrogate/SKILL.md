@@ -33,7 +33,7 @@ Launch all reviewers in a single message with the `Agent` tool, one per entry on
 
 Each reviewer gets `subagent_type: "pstack:readonly"`, `model` set to its configured entry, or its table default when there is no configured line, and `effort` set to the sheet's budget effort (default `xhigh`). Omit `model` for an `inherit` entry, so that reviewer runs on the parent model. Every reviewer is a Claude model, so the diversity comes from different models (`opus` vs `fable`), not different vendors: keep at least two distinct models on the panel.
 
-If the `Agent` tool rejects a configured entry, run that reviewer on Reviewer A's table default and say so. If it rejects a table default, spawn with the closest valid model alias (`fable`, `opus`, `sonnet`, `haiku`), and open a separate PR to update the default table. Do not block the review on the model issue. Never treat an `inherit` entry as a rejected model or apply either fallback to it.
+If the `Agent` tool rejects a configured entry, run that reviewer on the table default (`opus` or `fable`) the panel doesn't already have, so the panel keeps two distinct models, and say so. If it rejects a table default, spawn with the closest valid model alias (`fable`, `opus`, `sonnet`, `haiku`), and open a separate PR to update the default table. Do not block the review on the model issue. Never treat an `inherit` entry as a rejected model or apply either fallback to it.
 
 Read `references/reviewer-prompt.md` and fill in the same template for every reviewer with the stated intent, the diff or file contents, the rubric from `references/rubric.md`, and the code-quality lens from `references/code-quality-review.md`.
 

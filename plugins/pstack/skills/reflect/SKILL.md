@@ -53,9 +53,9 @@ File each Backlog item to your team's devex or backlog tracker without waiting. 
 Follow each approved row's Routing exactly:
 
 - Trivial existing-skill edit (a one-line bullet, a tightened sentence, a stale fact corrected): the parent does it directly.
-- Substantive existing-skill edit (a new section, a new pattern table, more than ~10 lines): follow poteto-mode's **Authoring or modifying a skill** playbook (`../poteto-mode/playbooks/authoring-a-skill.md`) and run its write / validate / test loop.
-- `tune description: <skill path>` (the skill exists but didn't trigger when it should have): rewrite the `description` per Claude Code's skill format (https://code.claude.com/docs/en/skills) so it names the trigger that was missed, then validate it with the same playbook. If the session has a skill-authoring skill with a description-optimization loop, run that loop.
-- `new skill via authoring-a-skill: <kebab-name>`: hand creation to the **Authoring or modifying a skill** playbook. Do not invent the shape ad hoc.
+- Substantive existing-skill edit (a new section, a new pattern table, more than ~10 lines): hand to the **create-skill** skill (`../create-skill/SKILL.md`) and run its draft / test / iterate loop.
+- `tune description: <skill path>` (the skill exists but didn't trigger when it should have): hand to `create-skill` and run its description-optimization loop.
+- `new skill via create-skill: <kebab-name>`: hand creation to `create-skill`. Do not invent the shape ad hoc.
 
 If your environment ships a SKILL.md validator, run it on every touched skill before declaring done.
 

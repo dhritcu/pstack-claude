@@ -14,7 +14,7 @@ This file maps questions to the skills and guide pages that hold the answers. Th
 
 ## Find out what they need
 
-Infer the need from the message and the conversation. A named situation, such as "which skill reviews a PR?", goes straight to its section. If the need is still unclear, ask one multiple-choice question with these options, then answer only the section they pick:
+Infer the need from the message and the conversation. A named situation, such as "which skill reviews a PR?", goes straight to its section. If the need is still unclear, ask one multiple-choice question with these options, then answer only the section they pick. `AskUserQuestion` takes at most four options, so ask this one as a numbered list in your reply:
 
 - Get set up
 - Start a task with `/pstack:poteto-mode`
@@ -88,7 +88,7 @@ The default answer is `/pstack:poteto-mode`, which runs most of the others when 
 | Turn their own working habits into a personal mode skill | [`/pstack:automate-me`](../automate-me/SKILL.md) |
 | Turn what a finished task taught into skill edits | [`/pstack:reflect`](../reflect/SKILL.md) |
 | Stop agents from repeating the same mistakes in this repo | [`/pstack:correct`](../correct/SKILL.md) |
-| Build a page whose buttons wake a Grok Bot over a webhook | [`/pstack:make-bot-ui`](../make-bot-ui/SKILL.md) |
+| Build a page whose buttons wake a Claude Code routine through its API trigger | [`/pstack:make-bot-ui`](../make-bot-ui/SKILL.md) |
 | Find their way around pstack | `/pstack:poteto-help` |
 
 If a skill directory next to this one is missing from the table, read its frontmatter and route by its description. The `principle-*` directories are covered under principles below.

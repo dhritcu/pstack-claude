@@ -8,6 +8,7 @@
 root="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 sheet="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/pstack-models.md"
 input=$(cat 2>/dev/null)
+todo='pstack: before any other step, open the todolist poteto-mode requires: the matched playbook'"'"'s steps copied in verbatim, then task-specific todos. Use TaskCreate/TaskUpdate if this session has them; otherwise write an uncommitted .audit/<task-slug>.todo.md checklist and keep it current. A step you skip stays with `skip: <reason>`.'
 
 # `<key>: off` in the sheet turns that hook off (case and spacing tolerant).
 off() {
@@ -42,7 +43,17 @@ case "${1:-}" in
   prompt)
     off "session hook" && exit 0
     off "reminder" && exit 0
+    if printf '%s' "$input" | grep -Eq '"prompt"[[:space:]]*:[[:space:]]*"[[:space:]]*/pstack:poteto-mode'; then
+      printf '%s\n' "$todo" | emit UserPromptSubmit
+      exit 0
+    fi
     printf '%s\n' 'pstack: new task? A bug report, perf problem, multi-file change, design choice, or playbook match -> your first tool call is the Skill tool with pstack:poteto-mode. A casual turn, a question about this conversation, or the user opts out -> don'"'"'t.' | emit UserPromptSubmit
+    ;;
+  skill-loaded)
+    # The todolist is the first thing poteto-mode asks for. Upstream's editor always has a todo
+    # tool; Claude Code often doesn't, so restate the rule and its fallback right as the skill loads.
+    printf '%s' "$input" | grep -Eq '"skill"[[:space:]]*:[[:space:]]*"pstack:poteto-mode"' || exit 0
+    printf '%s\n' "$todo" | emit PostToolUse
     ;;
   subagent-start)
     off "subagent hook" && exit 0

@@ -64,3 +64,13 @@ test("subagent start: pstack agents get the sheet, general-purpose gets the prin
 test("unknown event prints nothing and exits 0", () => {
   assert.equal(run("bogus").out, "");
 });
+
+test("poteto-mode loading restates the todolist rule, by Skill tool or typed command", () => {
+  const viaSkill = context(run("skill-loaded", { stdin: '{"tool_name":"Skill","tool_input":{"skill":"pstack:poteto-mode","args":"x"}}' }).out, "PostToolUse");
+  assert.match(viaSkill, /\.audit\/<task-slug>\.todo\.md/);
+  assert.equal(run("skill-loaded", { stdin: '{"tool_input":{"skill":"pstack:deslop"}}' }).out, "");
+  const typed = context(run("prompt", { stdin: '{"prompt":"/pstack:poteto-mode fix the feed"}' }).out, "UserPromptSubmit");
+  assert.match(typed, /TaskCreate/);
+  const plain = context(run("prompt", { stdin: '{"prompt":"fix the feed"}' }).out, "UserPromptSubmit");
+  assert.match(plain, /first tool call is the Skill tool/);
+});

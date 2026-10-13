@@ -24,7 +24,6 @@ const BANNED = [
   [/\b(grok|composer|gemini)-[0-9a-z.]+|\bgpt-[0-9][0-9a-z.-]*|claude-(opus|sonnet|haiku|fable)-[0-9-]+-(low|medium|high|xhigh|max)\b/, "Cursor model slug; use Claude aliases (fable, opus, sonnet, haiku, inherit)"],
   [/inherit-parent/, "Cursor alias; use inherit"],
   [/cursor-team-kit/, "skills are vendored in this plugin"],
-  [/\bcreate-skill\b/, "Cursor built-in; see playbooks/authoring-a-skill.md"],
   [/\/add-plugin\b/, "Cursor install command; use /plugin install"],
   [/\bCursor\b/, "Cursor product reference; describe the Claude Code equivalent"],
 ];

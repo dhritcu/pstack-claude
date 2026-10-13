@@ -47,12 +47,12 @@ use [`/pstack:poteto-mode`](./skills/poteto-mode/SKILL.md) at the start of a tas
 this skill is the main shortcut. i use it whenever i need the agent to do rigorous engineering work. it comes with twenty-three playbooks:
 
 ```
-/poteto-mode this pr has a subtle bug where the scroll drifts every 750ms even when idle. repro
+/pstack:poteto-mode this pr has a subtle bug where the scroll drifts every 750ms even when idle. repro
 first, then fix and verify.
 ```
 
 ```
-/poteto-mode i'm going to bed. land the stack even if ci flakes. i want everything merged by
+/pstack:poteto-mode i'm going to bed. land the stack even if ci flakes. i want everything merged by
 morning.
 ```
 
@@ -106,11 +106,11 @@ the full rules and playbooks live in [`skills/poteto-mode/SKILL.md`](./skills/po
 [`/pstack:poteto-mode`](./skills/poteto-mode/SKILL.md) runs most of these for you when a step needs them (`how`, `why`, `architect`, `arena`, `swarm`, `interrogate`, `unslop`, `no-comments`, `technical-writing`, `tdd`, and the principles). the table below is for when you want one directly:
 
 ```
-/how do we cancel runs? do we have an n+1 when we look up every run to cancel?
+/pstack:how do we cancel runs? do we have an n+1 when we look up every run to cancel?
 ```
 
 ```
-/interrogate review this pr.
+/pstack:interrogate review this pr.
 ```
 
 <details>
@@ -119,7 +119,7 @@ the full rules and playbooks live in [`skills/poteto-mode/SKILL.md`](./skills/po
 | skill | use it when |
 |---|---|
 | [`/pstack:poteto-mode`](./skills/poteto-mode/SKILL.md) | default entry point for any non-trivial task. |
-| [`/pstack:poteto-help`](./skills/poteto-help/SKILL.md) | you're new to pstack, or unsure which skill, playbook, or principle fits. finds out what you're trying to do, answers that part, and hands you a prompt to type. runs only when you type `/poteto-help`. |
+| [`/pstack:poteto-help`](./skills/poteto-help/SKILL.md) | you're new to pstack, or unsure which skill, playbook, or principle fits. finds out what you're trying to do, answers that part, and hands you a prompt to type. runs only when you type `/pstack:poteto-help`. |
 | [`/pstack:how`](./skills/how/SKILL.md) | you want a walkthrough of how a subsystem works. |
 | [`/pstack:why`](./skills/why/SKILL.md) | you want to know why something was built this way. discovers available MCPs at run time and queries each evidence category in parallel (source control, issue tracker, long-form docs, real-time chat, infra observability, error tracking, analytics warehouse). |
 | [`/pstack:recall`](./skills/recall/SKILL.md) | you're starting or resuming work and want your recent context on a topic rebuilt from your own chat history and the shared record, handed back as a tight current-state brief. |
@@ -131,7 +131,7 @@ the full rules and playbooks live in [`skills/poteto-mode/SKILL.md`](./skills/po
 | [`/pstack:interrogate`](./skills/interrogate/SKILL.md) | you have a diff and want different models to try to break it, including a strict code-quality lens. |
 | [`/pstack:automate-me`](./skills/automate-me/SKILL.md) | you want your own `-mode` skill, drafted from how you've actually worked. |
 | [`/pstack:make-bot-ui`](./skills/make-bot-ui/SKILL.md) | you want a page or dashboard whose buttons wake a claude code routine over its api trigger, including the token handoff and Tailscale. |
-| [`/pstack:setup-pstack`](./skills/setup-pstack/SKILL.md) | you want to pick which models pstack uses per role. detects your models and writes a config rule. |
+| [`/pstack:setup-pstack`](./skills/setup-pstack/SKILL.md) | you want to pick which models pstack uses per role. asks for a budget and writes the model sheet. |
 | [`/pstack:reflect`](./skills/reflect/SKILL.md) | a long task landed and you want the recipe captured as a skill edit. |
 | [`/pstack:correct`](./skills/correct/SKILL.md) | you keep correcting agents for the same mistakes. mines history for mistake classes, fixes each at the highest level that works (architecture, then types, lint, and ci, then tests, with docs last), and keeps a table pairing each rule with what enforces it. |
 | [`/pstack:teach`](./skills/teach/SKILL.md) | you want to actually understand a change or subsystem, not just have it summarized. runs how + why and weaves one plain explanation, built up diagram by diagram. |
@@ -146,6 +146,8 @@ the full rules and playbooks live in [`skills/poteto-mode/SKILL.md`](./skills/po
 | [`/pstack:unslop`](./skills/unslop/SKILL.md) | you're cleaning up writing. removes AI tells. |
 | [`/pstack:bro`](./skills/bro/SKILL.md) | you want the last message restated in plain human language, no jargon. |
 | [`/pstack:technical-writing`](./skills/technical-writing/SKILL.md) | layered doc standard (Diátaxis + Google developer style + STE + Global English) for docs, RFCs, readmes, PR descriptions, commit messages. |
+| [`/pstack:create-skill`](./skills/create-skill/SKILL.md) | you're writing or tuning a skill. claude code's skill format, then a real-session draft / test / iterate loop. |
+| [`/pstack:babysit`](./skills/babysit/SKILL.md) | you want one pr driven to merge-ready outside a poteto-mode run. |
 
 </details>
 
@@ -251,6 +253,11 @@ twenty-four short skills, one principle each. `poteto-mode` indexes them inline 
 - [`deslop`](./skills/deslop/SKILL.md) before commit.
 - [`control-cli`](./skills/control-cli/SKILL.md) (CLIs and TUIs) and [`control-ui`](./skills/control-ui/SKILL.md) (browser, Electron, web) to drive the real app.
 
+two of upstream's references are built into upstream's editor, so this port ships them as skills:
+
+- [`/pstack:create-skill`](./skills/create-skill/SKILL.md) authors, tests, and tunes a skill in claude code's format, with a real-session draft / test / iterate loop.
+- [`/pstack:babysit`](./skills/babysit/SKILL.md) is the standalone pr babysitter. inside `poteto-mode`, the [babysit playbook](./skills/poteto-mode/playbooks/babysit.md) supersedes it for pr-status requests.
+
 claude code's bundled `/verify` only runs when you type it, so pstack never asks the model to call it. for a project-specific driver, run [`/pstack:create-verification-skill`](./skills/create-verification-skill/SKILL.md).
 
 ## why are there no planning skills?
@@ -265,7 +272,7 @@ type [`/pstack:automate-me`](./skills/automate-me/SKILL.md). it mines your recen
 
 models are configurable too. type [`/pstack:setup-pstack`](./skills/setup-pstack/SKILL.md). it asks for a reasoning budget and writes a small model sheet (`~/.claude/pstack-models.md`, or under `$CLAUDE_CONFIG_DIR`) mapping each role (code, judgment, the review panels) to a claude model. pstack's hooks put it in every session and subagent, and every skill falls back to sensible defaults when a line is absent, so you override only what you want.
 
-when a default changes, a sheet written before the change still pins the old default. delete those role lines, or delete the file, then run `/setup-pstack` again. a rerun keeps any role whose model differs from the default.
+when a default changes, a sheet written before the change still pins the old default. delete those role lines, or delete the file, then run `/pstack:setup-pstack` again. a rerun keeps any role whose model differs from the default.
 
 ## automations
 

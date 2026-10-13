@@ -164,7 +164,7 @@ Collect:
 
 Inspect screenshots and video. Use read-only parallel workers for code history, test ideas, blast-radius mapping, and media review when useful. Each worker gets a narrow question and the Slack-write prohibition. `benny-reader` runs no commands, so the coordinator writes any `git log`, `git blame`, or search output it needs to a file and passes the path.
 
-Use pstack's `how` skill to trace the action through the repository. Use `why` for regression history and defensive code. Form competing cause hypotheses and identify evidence that would separate them.
+Use pstack's `how` skill to trace the action through the repository. Use `why` for regression history and defensive code. Both normally spawn `pstack:readonly` subagents, which keep Bash and MCP, so here run their steps in the coordinator, or brief `benny-reader` in place of each spawn. Form competing cause hypotheses and identify evidence that would separate them.
 
 ## 7. Reproduce
 
