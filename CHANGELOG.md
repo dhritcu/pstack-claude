@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.15.21-claude.3
+
+Final review, run by the plugin on itself (`/stack:auto` with four read-only reviewers, [#2](https://github.com/dhritcu/pstack-claude/pull/2)):
+
+- `watch-pr`: a head counts as no-CI only when the base tip has no checks either and the head commit is at least 180 s old, so CI that hasn't registered yet (including CI that runs only on pull requests) is waited for.
+- Hooks: the todolist restatement matches `auto` exactly (not `automate-me`), and the per-prompt reminder skips typed commands and background-task reports.
+- `tools/check.mjs` enforces what the docs claim: no versioned model IDs, no `commands/`, no Cursor subagent types.
+- Restored upstream rules the port had loosened (arena fallback, automate-me's PR default, babysit routing note), worktree-base caveats on every writer, and doc corrections.
+
 ## 0.15.21-claude.2
 
 Renames, so commands read as `/stack:<name>`:
