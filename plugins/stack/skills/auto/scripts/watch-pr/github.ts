@@ -7,6 +7,8 @@ export const PR_COMMIT_STATUS_QUERY =
   "\nquery PrCommitStatuses($owner: String!, $repo: String!, $pr: Int!) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      commits(last: 50) {\n        nodes {\n          commit {\n            oid\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
 export const PR_BASE_STATUS_QUERY =
   "\nquery PrBaseStatus($owner: String!, $repo: String!, $pr: Int!) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      baseRef {\n        target {\n          ... on Commit {\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
+export const PR_HEAD_COMMIT_QUERY =
+  "\nquery PrHeadCommit($owner: String!, $repo: String!, $pr: Int!) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      commits(last: 1) {\n        nodes {\n          commit {\n            committedDate\n          }\n        }\n      }\n    }\n  }\n}\n";
 export const PR_CHECK_ROLLUP_QUERY =
   "\nquery PrCheckRollup($owner: String!, $repo: String!, $pr: Int!, $after: String) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      commits(last: 1) {\n        nodes {\n          commit {\n            statusCheckRollup {\n              contexts(first: 100, after: $after) {\n                pageInfo {\n                  hasNextPage\n                  endCursor\n                }\n                nodes {\n                  __typename\n                  ... on CheckRun {\n                    name\n                    status\n                    conclusion\n                    detailsUrl\n                  }\n                  ... on StatusContext {\n                    context\n                    state\n                    targetUrl\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
 
@@ -621,6 +623,15 @@ export class GhGitHubReader implements T.GitHubReader {
               ),
       };
     });
+  }
+  async headCommitAgeSeconds(context: T.PrContext): Promise<number | null> {
+    const value = await runJson(graphqlArgs(PR_HEAD_COMMIT_QUERY, context));
+    const nodes = at(value, ["data", "repository", "pullRequest", "commits", "nodes"]);
+    if (!Array.isArray(nodes) || nodes.length === 0) return null;
+    const committed = Date.parse(
+      string(at(nodes[0], ["commit", "committedDate"]), "commits[0].commit.committedDate")
+    );
+    return Number.isNaN(committed) ? null : (Date.now() - committed) / 1_000;
   }
   async baseRollup(context: T.PrContext): Promise<T.RollupState> {
     const value = await runJson(graphqlArgs(PR_BASE_STATUS_QUERY, context));

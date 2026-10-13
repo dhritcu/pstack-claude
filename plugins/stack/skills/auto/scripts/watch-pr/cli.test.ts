@@ -317,6 +317,16 @@ describe("main", () => {
           baseRollup: "SUCCESS",
         }),
       ],
+      [
+        "the head commit is younger than the no-CI grace period",
+        fakeReader({
+          facts: { headRefOid: "head" },
+          fastPath: { kind: "none-reported" },
+          rollupPages: [{ kind: "no-rollup" }],
+          commitRollups: [{ oid: "head", state: null }],
+          headCommitAgeSeconds: 30,
+        }),
+      ],
       ["GitHub reports BLOCKED", noCi({ mergeStateStatus: "BLOCKED" })],
       ["mergeability is still computing", noCi({ mergeable: "UNKNOWN" })],
     ] as const)

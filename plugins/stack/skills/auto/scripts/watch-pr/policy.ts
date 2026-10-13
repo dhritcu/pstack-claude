@@ -58,6 +58,9 @@ async function mergeAssessment(
 // head has not reported yet. A BLOCKED
 // PR with no reported checks and no pending review can be waiting on a required
 // check that has not started. Both stay unavailable and retry.
+// CI that runs only on pull requests leaves the base tip without checks too, so a
+// fresh head gets a grace period before "no checks" counts as no CI.
+export const NO_CI_GRACE_SECONDS = 180;
 async function noChecksCi(
   reader: T.GitHubReader,
   facts: T.PullRequestFacts
@@ -71,6 +74,11 @@ async function noChecksCi(
   if ((await reader.baseRollup(facts.context)) !== null)
     throw new ChecksUnavailable(
       `no checks reported on head ${head}, but the base branch tip has reported checks`
+    );
+  const age = await reader.headCommitAgeSeconds(facts.context);
+  if (age === null || age < NO_CI_GRACE_SECONDS)
+    throw new ChecksUnavailable(
+      `no checks reported on head ${head} yet; waiting ${NO_CI_GRACE_SECONDS}s after the commit for a first check to register (CI that runs only on pull requests has nothing on the base tip)`
     );
   if (facts.mergeable === "UNKNOWN")
     throw new ChecksUnavailable(

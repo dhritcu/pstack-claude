@@ -23,6 +23,7 @@ export interface FakeReaderOptions {
   readonly threadPages?: readonly ReviewThreadPage[];
   readonly commitRollups?: readonly CommitRollup[];
   readonly baseRollup?: RollupState;
+  readonly headCommitAgeSeconds?: number | null;
   readonly openPullRequests?: readonly OpenPullRequest[];
   readonly origin?: Repository | null;
   readonly current?: PrContext;
@@ -132,6 +133,10 @@ export function fakeReader(
     async commitRollups() {
       calls.push("commitRollups");
       return options.commitRollups ?? [{ oid: "head", state: "SUCCESS" }];
+    },
+    async headCommitAgeSeconds() {
+      calls.push("headCommitAgeSeconds");
+      return options.headCommitAgeSeconds === undefined ? 3_600 : options.headCommitAgeSeconds;
     },
     async baseRollup() {
       calls.push("baseRollup");
