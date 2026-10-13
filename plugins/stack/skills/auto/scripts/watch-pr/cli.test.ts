@@ -307,6 +307,16 @@ describe("main", () => {
           ],
         }),
       ],
+      [
+        "the base branch tip reported checks",
+        fakeReader({
+          facts: { headRefOid: "head" },
+          fastPath: { kind: "none-reported" },
+          rollupPages: [{ kind: "no-rollup" }],
+          commitRollups: [{ oid: "head", state: null }],
+          baseRollup: "SUCCESS",
+        }),
+      ],
       ["GitHub reports BLOCKED", noCi({ mergeStateStatus: "BLOCKED" })],
       ["mergeability is still computing", noCi({ mergeable: "UNKNOWN" })],
     ] as const)
