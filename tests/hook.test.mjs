@@ -90,3 +90,17 @@ test("effort hook ignores the session's own top-level effort field (real Claude 
   const out = JSON.parse(run("agent-effort", { stdin: input }).out).hookSpecificOutput.updatedInput;
   assert.deepEqual(out, { effort: "xhigh", description: "d", prompt: "p", subagent_type: "stack:readonly", model: "haiku", run_in_background: false });
 });
+
+test("todolist triggers match auto by name only, bare or namespaced", () => {
+  const prompt = (p) => run("prompt", { stdin: JSON.stringify({ prompt: p }) }).out;
+  assert.doesNotMatch(prompt("/stack:automate-me draft my mode"), /TaskCreate/);
+  assert.match(context(prompt("/auto fix the feed"), "UserPromptSubmit"), /TaskCreate/);
+  assert.match(context(prompt("/stack:auto"), "UserPromptSubmit"), /TaskCreate/);
+  assert.match(context(run("skill-loaded", { stdin: '{"tool_input":{"skill":"auto"}}' }).out, "PostToolUse"), /TaskCreate/);
+  assert.equal(run("skill-loaded", { stdin: '{"tool_input":{"skill":"stack:automate-me"}}' }).out, "");
+});
+
+test("no new-task reminder on slash commands or background notifications", () => {
+  assert.equal(run("prompt", { stdin: '{"prompt":"/stack:how trace the cache"}' }).out, "");
+  assert.equal(run("prompt", { stdin: '{"prompt":"<task-notification>\\n<task-id>a1</task-id>"}' }).out, "");
+});
