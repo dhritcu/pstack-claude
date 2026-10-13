@@ -66,7 +66,7 @@ The **auto** skill shows the shape. Read it for granularity. Don't copy its cont
 
 Use the **create-skill** skill (`../create-skill/SKILL.md`) to author the skill. Placement:
 
-- Path: preserve an existing mode skill's category. For a new mode, default to `${CLAUDE_CONFIG_DIR:-~/.claude}/skills/<handle>-mode/SKILL.md`, a personal skill that follows the user into every project. Resolve the directory from `$CLAUDE_CONFIG_DIR` when it is set. Use `.claude/skills/<handle>/<handle>-mode/SKILL.md` when the repo has an established personal category for that handle, or `.claude/skills/<handle>-mode/SKILL.md` in the project if the user wants it shared with the repo.
+- Path: preserve an existing mode skill's category. For a new mode, use `.claude/skills/<handle>/<handle>-mode/SKILL.md` when the repo has an established personal category for that handle. Otherwise default to `.claude/skills/<handle>-mode/SKILL.md` in the project (or `${CLAUDE_CONFIG_DIR:-~/.claude}/skills/<handle>-mode/` if the user prefers a personal skill).
 - Route through pstack underneath. The mode skill lives outside the plugin, so `../<name>/SKILL.md` paths don't reach pstack's skills. Have it invoke the `stack:auto` skill for tasks that need rigor and layer the user's rules on top, and resolve any pstack file it names (a playbook, a principle) against the auto skill's base directory, which Claude Code prints when that skill loads. Slash forms are `/stack:<name>`.
 - Handle: the user's first name or chosen identifier.
 - Frontmatter `description`: trigger on their name + `/<handle>-mode` + "work in their style", not on generic keywords like "write code" or "review PR".
