@@ -71,7 +71,7 @@ A "different model family" (arena cross-judge, "a second opinion is the same pro
 ## Hooks (replace Cursor's custom mode)
 
 - `SessionStart` (startup, resume, clear, compact): injects the routing rule (when to invoke `stack:auto`) and the model sheet's lines, unless the sheet says `session hook: off`.
-- `UserPromptSubmit`: injects a sharpened form of upstream's mode reminder each prompt ("new task? A bug report, perf problem, multi-file change, design choice, or playbook match -> your first tool call is the Skill tool with stack:auto. ..."), or the todolist rule when the prompt starts with `/stack:auto`, unless `reminder: off` or `session hook: off`.
+- `UserPromptSubmit`: injects a sharpened form of upstream's mode reminder each prompt ("new task? A bug report, perf problem, multi-file change, design choice, or playbook match -> your first tool call is the Skill tool with stack:auto. ..."), the todolist rule when the prompt starts with `/stack:auto` or `/auto`, and nothing for other slash commands or `<...>` background-task reports, unless `reminder: off` or `session hook: off`.
 - `SubagentStart`: `stack:*` agents get the model sheet and the plugin root; `general-purpose` subagents get a short pointer to the principles index, unless `subagent hook: off`.
 - `PostToolUse` (Skill): when `stack:auto` loads, restates the todolist rule and its `.audit/` fallback. No toggle.
 - `PreToolUse` (Agent): fills `effort` from the sheet's budget on `stack:*` spawns that have none. No toggle.
